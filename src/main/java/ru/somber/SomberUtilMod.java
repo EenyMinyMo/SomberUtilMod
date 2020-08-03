@@ -24,7 +24,7 @@ public class SomberUtilMod {
 
     @Mod.EventHandler
     public void postInit(FMLPostInitializationEvent event) {
-        System.out.println("post init " + event.description());
+
     }
 
 }
