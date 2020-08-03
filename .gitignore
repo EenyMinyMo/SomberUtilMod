@@ -1,0 +1,11 @@
+#folders
+/.gradle/*
+/build/*
+/eclipse/*
+/gradle/*
+
+#files
+/gradlew.bat
+/build.gradle
+/SomberUtilMod(NeMod).iml
+/gradlew
