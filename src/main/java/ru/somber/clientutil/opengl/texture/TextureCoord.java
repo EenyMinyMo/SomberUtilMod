@@ -9,11 +9,17 @@ public class TextureCoord {
     private float[] coords;
 
     public TextureCoord() {
-        coords = new float[] {0, 0, 1, 0, 1, 1, 0, 1};
+        //дефолтные координаты
+        coords = new float[] {
+                0, 0,
+                1, 0,
+                1, 1,
+                0, 1 };
     }
 
     public TextureCoord(float coordX_0, float coordY_0, float coordX_1, float coordY_1, float coordX_2, float coordY_2, float coordX_3, float coordY_3) {
         coords = new float[8];
+
         coords[0] = coordX_0;
         coords[2] = coordX_1;
         coords[4] = coordX_2;
@@ -96,12 +102,12 @@ public class TextureCoord {
 
     public void setCoords(float[] coords) {
         this.coords[0] = coords[0];
-        this.coords[2] = coords[2];
-        this.coords[4] = coords[4];
-        this.coords[6] = coords[6];
         this.coords[1] = coords[1];
+        this.coords[2] = coords[2];
         this.coords[3] = coords[3];
+        this.coords[4] = coords[4];
         this.coords[5] = coords[5];
+        this.coords[6] = coords[6];
         this.coords[7] = coords[7];
     }
 
