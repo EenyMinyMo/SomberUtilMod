@@ -76,6 +76,14 @@ public class ShaderProgram {
         }
     }
 
+    public void checkError() {
+        if (! isLink()) {
+            printInfoLogMessage();
+            throw new RuntimeException("Compile shader error " + toString());
+        }
+    }
+
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -87,6 +95,14 @@ public class ShaderProgram {
     @Override
     public int hashCode() {
         return Objects.hash(shaderProgramID);
+    }
+
+    @Override
+    public String toString() {
+        return "ShaderProgram{" +
+                "shaderProgramID=" + shaderProgramID +
+                ", attachShaders=" + attachShaders +
+                '}';
     }
 
 }

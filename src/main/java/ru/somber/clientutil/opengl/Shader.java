@@ -83,6 +83,13 @@ public class Shader {
         }
     }
 
+    public void checkError() {
+        if (! isCompile()) {
+            printInfoLogMessage();
+            throw new RuntimeException("Compile shader error " + toString());
+        }
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -95,6 +102,15 @@ public class Shader {
     @Override
     public int hashCode() {
         return Objects.hash(shaderType, shaderID);
+    }
+
+    @Override
+    public String toString() {
+        return "Shader{" +
+                "shaderType=" + shaderType +
+                ", shaderID=" + shaderID +
+                ", sourceCode='" + sourceCode + '\'' +
+                '}';
     }
 
 }
