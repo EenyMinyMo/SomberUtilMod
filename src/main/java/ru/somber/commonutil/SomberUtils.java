@@ -58,10 +58,17 @@ public final class SomberUtils {
         float x = (float) (entity.lastTickPosX + (entity.posX - entity.lastTickPosX) * interpolationFactor);
         float y = (float) (entity.lastTickPosY + (entity.posY - entity.lastTickPosY) * interpolationFactor);
         float z = (float) (entity.lastTickPosZ + (entity.posZ - entity.lastTickPosZ) * interpolationFactor);
+
         return new Vector3f(x, y, z);
     }
 
+    public static void interpolateMove(Vector3f destination, Entity entity, float interpolationFactor) {
+        float x = (float) (entity.lastTickPosX + (entity.posX - entity.lastTickPosX) * interpolationFactor);
+        float y = (float) (entity.lastTickPosY + (entity.posY - entity.lastTickPosY) * interpolationFactor);
+        float z = (float) (entity.lastTickPosZ + (entity.posZ - entity.lastTickPosZ) * interpolationFactor);
 
+        destination.set(x, y, z);
+    }
 
 
 }
