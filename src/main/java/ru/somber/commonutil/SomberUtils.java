@@ -1,7 +1,6 @@
 package ru.somber.commonutil;
 
 import net.minecraft.entity.Entity;
-
 import org.lwjgl.util.vector.Vector3f;
 
 public final class SomberUtils {
