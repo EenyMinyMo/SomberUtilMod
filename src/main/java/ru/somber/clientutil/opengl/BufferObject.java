@@ -23,7 +23,7 @@ public class BufferObject {
     public BufferObject(int bufferTarget, int bufferID) {
         this.bufferTarget = bufferTarget;
         this.bufferID = bufferID;
-        this.bufferSizeByte = -1;
+        this.bufferSizeByte = 0;
     }
 
     /**
