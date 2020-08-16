@@ -41,7 +41,7 @@ public class TextureCoordSeparator {
         return heightOnSub;
     }
 
-    public TextureCoord getCoordForRowColumn(int row, int column) {
+    public TextureCoordAABB getCoordForRowColumn(int row, int column) {
         float xMin = (column + 0.0F) / countColumn;
         float xMax = (column + 1.0F) / countColumn;
 
@@ -50,10 +50,10 @@ public class TextureCoordSeparator {
         //Почему мы к максу прибавляем, чтобы получить минимум? А потому шо майнкрафт.
         //(текстура в памяти перевернута по оси У (там 0 у У находится сверху, в опенгл же снизу))
 
-        return new TextureCoord(xMin, yMin, xMax, yMin, xMax, yMax, xMin, yMax);
+        return new TextureCoordAABB(xMin, yMin, xMax, xMax);
     }
 
-    public TextureCoord getCoordForNumber(int number) {
+    public TextureCoordAABB getCoordForNumber(int number) {
         number %= countSubTexture;
 
         int row = number / countColumn;
