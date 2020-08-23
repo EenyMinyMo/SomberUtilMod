@@ -6,16 +6,16 @@ import org.lwjgl.opengl.GL33;
 import java.nio.FloatBuffer;
 
 public class VertexAttribVBO {
-    private final int attributeIndex;
-    private final int attributeSize;
-    private final int attributeType;
-    private final int attributeStride;
-    private final int attributeOffset;
-    private final int vertexAttribDivisor;
+    private int attributeIndex;
+    private int attributeSize;
+    private int attributeType;
+    private int attributeStride;
+    private int attributeOffset;
+    private int vertexAttribDivisor;
 
-    private final BufferObject vbo;
-    private final VBODataManager vboDataManager;
-    private final int vboUsage;
+    private BufferObject vbo;
+    private VBODataManager vboDataManager;
+    private int vboUsage;
 
     private FloatBuffer vboBuffer;
 
@@ -23,9 +23,6 @@ public class VertexAttribVBO {
     public VertexAttribVBO(int attributeIndex,
                            int attributeSize,
                            int attributeType,
-                           int attributeStride,
-                           int attributeOffset,
-                           int vertexAttribDivisor,
                            BufferObject vbo,
                            FloatBuffer vboBuffer,
                            VBODataManager vboDataManager,
@@ -34,9 +31,6 @@ public class VertexAttribVBO {
         this.attributeIndex = attributeIndex;
         this.attributeSize = attributeSize;
         this.attributeType = attributeType;
-        this.attributeStride = attributeStride;
-        this.attributeOffset = attributeOffset;
-        this.vertexAttribDivisor = vertexAttribDivisor;
 
         this.vbo = vbo;
         this.vboDataManager = vboDataManager;
@@ -127,6 +121,42 @@ public class VertexAttribVBO {
         return vboUsage;
     }
 
+
+    public void setAttributeIndex(int attributeIndex) {
+        this.attributeIndex = attributeIndex;
+    }
+
+    public void setAttributeSize(int attributeSize) {
+        this.attributeSize = attributeSize;
+    }
+
+    public void setAttributeType(int attributeType) {
+        this.attributeType = attributeType;
+    }
+
+    public void setAttributeStride(int attributeStride) {
+        this.attributeStride = attributeStride;
+    }
+
+    public void setAttributeOffset(int attributeOffset) {
+        this.attributeOffset = attributeOffset;
+    }
+
+    public void setVertexAttribDivisor(int vertexAttribDivisor) {
+        this.vertexAttribDivisor = vertexAttribDivisor;
+    }
+
+    public void setVbo(BufferObject vbo) {
+        this.vbo = vbo;
+    }
+
+    public void setVboDataManager(VBODataManager vboDataManager) {
+        this.vboDataManager = vboDataManager;
+    }
+
+    public void setVboUsage(int vboUsage) {
+        this.vboUsage = vboUsage;
+    }
 
     public void setVboBuffer(FloatBuffer vboBuffer) {
         this.vboBuffer = vboBuffer;
