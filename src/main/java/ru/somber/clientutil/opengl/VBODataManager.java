@@ -52,15 +52,20 @@ public class VBODataManager {
         private final BufferObject vbo;
         private final int vboUsage;
         private final int intervalTimeUpdate;
+
         private FloatBuffer dataBuffer;
         private long lastUpdateVBOSize;
         private float expansionFactor;
         private int lastUpdateTime;
-
+        private int currentUpdateTime;
 
         public VBOEntry(BufferObject vbo, FloatBuffer dataBuffer, int vboUsage, int intervalTimeUpdate, float expansionFactor, int currentTime) {
             if (vbo == null || expansionFactor < 1 || intervalTimeUpdate < 1) {
                 throw new RuntimeException();
+            }
+
+            if (dataBuffer == null) {
+                dataBuffer = BufferUtils.createFloatBuffer(0);
             }
 
             this.vbo = vbo;
@@ -71,6 +76,7 @@ public class VBODataManager {
             this.lastUpdateTime = currentTime;
 
             this.lastUpdateVBOSize = vbo.getBufferSizeByte();
+            this.currentUpdateTime = 0;
         }
 
 
@@ -105,7 +111,7 @@ public class VBODataManager {
 
         public void setExpansionFactor(float expansionFactor) {
             if (expansionFactor < 1) {
-                throw new RuntimeException();
+                throw new RuntimeException("expansionFactor should be equal or greater than 1: " + expansionFactor);
             }
 
             this.expansionFactor = expansionFactor;
@@ -116,9 +122,12 @@ public class VBODataManager {
         }
 
 
-        public void updateSize(long newSize, int currentTime) {
+        public void updateSize(long newSize) {
+            currentUpdateTime++;
+
             if ((newSize > lastUpdateVBOSize) ||
-                        (((currentTime - lastUpdateTime) >= intervalTimeUpdate) && (((float) lastUpdateVBOSize / newSize) > (expansionFactor + 0.05F)))) {
+                (((currentUpdateTime - lastUpdateTime) >= intervalTimeUpdate) && (((float) lastUpdateVBOSize / newSize) > (expansionFactor + 0.05F)))) {
+
                 lastUpdateVBOSize = (long) (newSize * expansionFactor);
                 dataBuffer = BufferUtils.createFloatBuffer((int) (lastUpdateVBOSize));
 
@@ -126,7 +135,7 @@ public class VBODataManager {
                 BufferObject.bufferData(vbo, lastUpdateVBOSize * 4, vboUsage);
                 BufferObject.bindNone(vbo);
 
-                this.lastUpdateTime = currentTime;
+                this.lastUpdateTime = currentUpdateTime;
             }
         }
 
