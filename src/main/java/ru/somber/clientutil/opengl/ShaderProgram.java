@@ -105,4 +105,12 @@ public class ShaderProgram {
                 '}';
     }
 
+    public static void useShaderProgram(ShaderProgram shaderProgram) {
+        GL20.glUseProgram(shaderProgram.getShaderProgramID());
+    }
+
+    public static void useNoneShaderProgram() {
+        GL20.glUseProgram(0);
+    }
+
 }

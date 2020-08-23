@@ -27,13 +27,6 @@ public final class OpenGLUtils {
         }
     }
 
-    public static void useShaderProgram(ShaderProgram shaderProgram) {
-        GL20.glUseProgram(shaderProgram.getShaderProgramID());
-    }
-
-    public static void useNoneShaderProgram() {
-        GL20.glUseProgram(0);
-    }
 
     public static void drawColorOverFramebuffer(float r, float g, float b, float a) {
         GL11.glDisable(GL11.GL_TEXTURE_2D);
@@ -137,6 +130,5 @@ public final class OpenGLUtils {
             System.out.println();
         }
     }
-
 
 }
