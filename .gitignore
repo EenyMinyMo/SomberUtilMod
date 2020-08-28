@@ -1,5 +1,6 @@
 #folders
 /.gradle/*
+/.idea/*
 /build/*
 /eclipse/*
 /gradle/*
