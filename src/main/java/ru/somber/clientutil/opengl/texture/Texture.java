@@ -40,6 +40,7 @@ public class Texture {
         this.internalTypeGL = internalTypeGL;
     }
 
+
     public int getTextureID() {
         return textureID;
     }
@@ -64,6 +65,11 @@ public class Texture {
         return internalTypeGL;
     }
 
+
+    public void setTextureID(int textureID) {
+        this.textureID = textureID;
+    }
+
     public void setWidthTexture(int widthTexture) {
         this.widthTexture = widthTexture;
     }
@@ -83,6 +89,7 @@ public class Texture {
     public void setInternalTypeGL(int internalTypeGL) {
         this.internalTypeGL = internalTypeGL;
     }
+
 
     @Override
     public boolean equals(Object o) {
