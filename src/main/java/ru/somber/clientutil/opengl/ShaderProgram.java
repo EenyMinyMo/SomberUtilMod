@@ -105,6 +105,20 @@ public class ShaderProgram {
                 '}';
     }
 
+
+    public static ShaderProgram createShaderProgram(Shader... attachShaders) {
+        ShaderProgram shaderProgram = new ShaderProgram();
+
+        for (Shader shader : attachShaders) {
+            shaderProgram.attachShader(shader);
+        }
+
+        shaderProgram.linkProgram();
+        shaderProgram.checkError();
+
+        return shaderProgram;
+    }
+
     public static void useShaderProgram(ShaderProgram shaderProgram) {
         GL20.glUseProgram(shaderProgram.getShaderProgramID());
     }

@@ -2,9 +2,11 @@ package ru.somber.clientutil.opengl;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraft.util.ResourceLocation;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
 
+import java.io.IOException;
 import java.util.Objects;
 
 @SideOnly(Side.CLIENT)
@@ -12,6 +14,7 @@ public class Shader {
     private int shaderType;
     private int shaderID;
     private String sourceCode;
+
 
     public Shader(int shaderType) {
         this.shaderType = shaderType;
@@ -34,6 +37,7 @@ public class Shader {
         this.shaderID = shaderID;
         this.sourceCode = sourceCode;
     }
+
 
     public void setSourceCode(String sourceCode) {
         this.sourceCode = sourceCode;
@@ -90,6 +94,7 @@ public class Shader {
         }
     }
 
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -111,6 +116,22 @@ public class Shader {
                 ", shaderID=" + shaderID +
                 ", sourceCode='" + sourceCode + '\'' +
                 '}';
+    }
+
+
+    public static Shader createShaderObject(int shaderType, ResourceLocation sourceCodeLocation) {
+        Shader shader = new Shader(shaderType);
+
+        try {
+            shader.setSourceCode(OpenGLUtils.loadShaderCode(sourceCodeLocation));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        shader.compileShader();
+        shader.checkError();
+
+        return shader;
     }
 
 }
