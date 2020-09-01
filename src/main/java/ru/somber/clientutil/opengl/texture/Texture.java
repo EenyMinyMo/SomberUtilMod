@@ -128,17 +128,13 @@ public class Texture {
     }
 
     public static void recreateTexture(Texture texture, int width, int height) {
-        if (texture.getTextureID() > 0) {
-            GL11.glDeleteTextures(texture.getTextureID());
-        }
-        texture.textureID = GL11.glGenTextures();
         texture.setWidthTexture(width);
         texture.setHeightTexture(height);
 
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, texture.getTextureID());
         GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, texture.getInternalFormatColorGL(),texture.getWidthTexture(),texture.getHeightTexture(), 0, texture.getFormatColorGL(), texture.getInternalTypeGL(), (ByteBuffer)null);
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+//        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+//        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
     }
 
