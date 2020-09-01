@@ -12,7 +12,11 @@ public final class SomberUtils {
             NUMBER_ERROR_4 = 0.0001,
             NUMBER_ERROR_6 = 0.000001,
             NUMBER_ERROR_8 = 0.00000001,
-            NUMBER_ERROR_10 = 0.0000000001;
+            NUMBER_ERROR_10 = 0.0000000001,
+            NUMBER_ERROR_12 = 0.000000000001,
+            NUMBER_ERROR_14 = 0.00000000000001,
+            NUMBER_ERROR_16 = 0.0000000000000001,
+            NUMBER_ERROR_18 = 0.000000000000000001;
 
     public static int getExp2MoreThanNumber(int number) {
         int exp = 1;
