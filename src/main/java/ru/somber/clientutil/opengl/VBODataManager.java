@@ -4,7 +4,9 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL15;
 
 import java.nio.FloatBuffer;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 
 public class VBODataManager {
 
