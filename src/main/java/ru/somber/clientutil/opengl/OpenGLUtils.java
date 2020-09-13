@@ -9,7 +9,6 @@ import org.lwjgl.opengl.GL11;
 import ru.somber.clientutil.opengl.texture.Texture;
 
 import java.io.IOException;
-import java.nio.FloatBuffer;
 import java.util.Scanner;
 
 @SideOnly(Side.CLIENT)
