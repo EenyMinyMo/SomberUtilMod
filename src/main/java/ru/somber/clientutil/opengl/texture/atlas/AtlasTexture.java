@@ -27,19 +27,19 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Класс для представления текстурного атласа частиц.
+ * Класс для представления текстурного атласа.
  * Во многом скопирован с манйкрафтовского TextureMap, однако здесь добавлена документация и вырезана часть ненужного кода.
  *
  * <p> Создание атласа:
- * <p> 1. Создаем объект класса с корректными atlasPath и уровнями анизатропной фильтрации и мипмапы.
- * <p> Для atlasPath: путь до папки с тексутрами для атласа. Все текстуры атласа должны храниться в этой папке.
- * atlasPath должен быть следующего формата: "MOD_ID:путь_до_папки_с_текстурами".
+ * <p> 1. Создаем объект класса с корректными atlasName и уровнями анизатропной фильтрации.
+ * <p> Для atlasName: название атласа и путь до папки с тексутрами для атласа. Все текстуры атласа должны храниться в этой папке.
+ * atlasName должен быть следующего формата: "MOD_ID:путь_до_папки_с_текстурами".
  *
- * <p> 2. Все используемые для частиц спрайты зарегистрировать. Лучше делать это, используя метод с параматром-объектом готовой иконки.
+ * <p> 2. Все используемые для частиц иконки зарегистрировать. Лучше делать это, используя метод с параматром-объектом готовой иконки.
  * Т.е. объект иконки создать заранее и прописать ему нужные характеристики.
- * Для использования иконок подойдут только иконки-наследники от ParticleAtlasIcon.
- * Для объекта иконок прописывать имя следующим образом: "MOD_ID + ":название_файла_частицы"".
- * В качестве названия файла указывать только само название файла! Папки до файла не нужно!
+ * Для использования иконок подойдут только иконки-наследники от AtlasIcon этого же мода.
+ * Для объекта иконок прописывать имя следующим образом: "MOD_ID + ":название_файла_текстуры_иконки"".
+ * В качестве названия файла указывать только само название файла! Папки до файла указывать не нужно!
  *
  * <p> 3. Вызвать loadTextureAtlas с переданными файловым менеджером (можно юзать майнкрафтовский).
  * Этот метод загрузит текстурки частиц и сформирует текстурный атласа.
@@ -56,56 +56,122 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
     private static final Logger logger = LogManager.getLogger();
 
     /**
+     * Название атласа, по совместительству это путь до папки с текстурами атласа.
+     * Нужно для идетификации в менеджере ресурсов и формирования путей до ресурсов иконок.
+     */
+    private final String atlasName;
+
+    /** Иконка для отсутствующих текстур. */
+    private final AtlasIcon missingImage = new AtlasIcon("missingno");
+
+    /**
      * Здесь хранятся иконки, которые будут загружаться.
-     * Хранение в формате <Название иконки, соответствующий ParticleAtlasIcon>.
+     * Хранение в формате <Название иконки, соответствующий AtlasIcon>.
      */
     private final Map<String, AtlasIcon> mapRegisteredIcons = Maps.newHashMap();
     /**
-     * Здесь хранятся иконки, вошедшие в текущий текстурный атлас. Т.е. мапа заполнена иконки, имеющися в уже готовом атласе.
-     * <Название иконки, соответствующий ParticleAtlasIcon>.
+     * Здесь хранятся иконки, вошедшие в текущий текстурный атлас. Т.е. мапа заполнена иконками, имеющимися в уже готовом атласе.
+     * Хранение в формате <Название иконки, соответствующий AtlasIcon>.
      */
     private final Map<String, AtlasIcon> mapUploadedIcons = Maps.newHashMap();
-    /** Список иконок, которые могут в анимацию. */
+    /**
+     * Список иконок, которые могут в анимацию (объекты от AnimatedAtlasIcon и наследников).
+     */
     private final List<AnimatedAtlasIcon> listAnimatedIcons = Lists.newArrayList();
 
-    /** Путь до атласа. Нужен для идетификации в менеджере ресурсов и формирования путей до ресурсов частиц. */
-    private final String atlasPath;
     /** Уровень анизатропной фильтрации для этого алтаса. */
     private int anisotropicFiltering = 1;
 
-    /** Спрайт для отсутствующих текстур. */
-    private final AtlasIcon missingImage = new AtlasIcon("missingno");
-
 
     /**
-     * @param atlasPath путь до папки с тексутрами для атласа. Все текстуры атласа должны храниться в этой папке.
-     *                  atlasPath должен быть следующего формата: "MOD_ID:путь_до_папки_с_текстурами"
+     * @param atlasName название атласа. По совместительству это путь до папки с тексутрами для атласа.
+     *                  Все текстуры атласа должны храниться в этой папке.
+     *                  atlasName должен быть следующего формата: "MOD_ID:путь_до_папки_с_текстурами"
      */
-    public AtlasTexture(String atlasPath) {
-        this(atlasPath, 1);
+    public AtlasTexture(String atlasName) {
+        this(atlasName, 1);
     }
 
     /**
-     * @param atlasPath путь до папки с тексутрами для атласа. Все текстуры атласа должны храниться в этой папке.
-     *                  atlasPath должен быть следующего формата: "MOD_ID:путь_до_папки_с_текстурами"
+     * @param atlasName название атласа. По совместительству это путь до папки с тексутрами для атласа.
+     *                  Все текстуры атласа должны храниться в этой папке.
+     *                  atlasName должен быть следующего формата: "MOD_ID:путь_до_папки_с_текстурами"
      * @param anisotropicFiltering уровень анизатропной фильтрации.
      */
-    public AtlasTexture(String atlasPath, int anisotropicFiltering) {
-        this.atlasPath = atlasPath;
+    public AtlasTexture(String atlasName, int anisotropicFiltering) {
+        this.atlasName = atlasName;
         this.anisotropicFiltering = anisotropicFiltering;
 
         initMissingImage();
-        Minecraft.getMinecraft().renderEngine.loadTickableTexture(new ResourceLocation(atlasPath), this);
+        Minecraft.getMinecraft().renderEngine.loadTickableTexture(new ResourceLocation(atlasName), this);
     }
 
 
     /**
-     * Загружает частицы и формирует текстурный атлас частиц.
+     * Возвращает название атласа.
+     * По совместительству это путь до папки с атласом.
+     * Все текстуры атласа должны храниться в этой папке.
      */
-    public void loadTextureAtlas(IResourceManager resourceManager) {
+    public String getAtlasName() {
+        return atlasName;
+    }
+
+    /**
+     * Возвращает зарегистрированную иконку по ее имени.
+     */
+    public AtlasIcon getRegisteredAtlasIcon(String iconName) {
+        return mapRegisteredIcons.get(iconName);
+    }
+
+    /**
+     * Возвращает уровень анизатропной фильтрации.
+     */
+    public int getAnisotropicFiltering() {
+        return anisotropicFiltering;
+    }
+
+    /**
+     * Возвращает иконку по имени, если она входит в текущий текстурный атлас.
+     * Иначе возвращается текстура-заглушка.
+     */
+    public AtlasIcon getAtlasIcon(String iconName) {
+        AtlasIcon particleAtlasIcon = this.mapUploadedIcons.get(iconName);
+        if (particleAtlasIcon == null) {
+            particleAtlasIcon = this.missingImage;
+        }
+
+        return particleAtlasIcon;
+    }
+
+    /**
+     * Возвращает анимированную иконку по имени, если она входит в текущий текстурный атлас.
+     * Иначе выбрасывается RuntimeException.
+     */
+    public AnimatedAtlasIcon getAnimatedAtlasIcon(String iconName) {
+        for (AnimatedAtlasIcon icon : listAnimatedIcons) {
+            if (icon.getIconName().equals(iconName)) {
+                return icon;
+            }
+        }
+
+        throw new RuntimeException("AnimatedAtlasIcon with name:" + iconName + " not found.");
+    }
+
+    /**
+     * Устанавливает уровень анизатропной фильтрации для атласа.
+     * Атлас с этим уровнем анизатропной фильтрации будет создан только после вызова loadTextureAtlas().
+     */
+    public void setAnisotropicFiltering(int newAnisotropicFiltering) {
+        this.anisotropicFiltering = newAnisotropicFiltering;
+    }
+
+    /**
+     * Загружает текстуры зарегистрированных иконкок и сшивает текстурный атлас.
+     */
+    public void stitchTextureAtlas(IResourceManager resourceManager) {
         this.deleteGlTexture();
 
-        //они будут заполнены далее.
+        //Очищаем все загруженные иконки, коллекции будут заполнены далее новыми иконками.
         this.mapUploadedIcons.clear();
         this.listAnimatedIcons.clear();
 
@@ -113,17 +179,17 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
         int maximumTextureSize = Minecraft.getGLMaximumTextureSize();
         Stitcher stitcher = new Stitcher(maximumTextureSize, maximumTextureSize, true, 0);
 
-        //Здесь происходит загрузка и дальнешая подготовка всех спрайтов из mapRegisteredIcons
-        loadAllIcons(resourceManager, stitcher, maximumTextureSize);
+        //Здесь происходит загрузка и дальнешая подготовка всех иконок из mapRegisteredIcons
+        loadAllIcons(resourceManager, stitcher);
 
         //подготовка текстуры-заглушки.
         stitcher.addSprite(this.missingImage);
 
-        //Сшиваем текстуру.
+        //Сшиваем будущий атлас.
         stitcher.doStitch();
 
         //Выделяем место под текстуру-атлас в OGL. Данные в эту текстуру загружаем ниже.
-        logger.info("Created: {}x{} {}-atlas", stitcher.getCurrentWidth(), stitcher.getCurrentHeight(), this.atlasPath);
+        logger.info("Created a texture-atlas with name: {} and size: {}x{}", this.atlasName, stitcher.getCurrentWidth(), stitcher.getCurrentHeight());
         TextureUtil.allocateTextureImpl(
                 this.getGlTextureId(),
                 0,
@@ -131,10 +197,12 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
                 stitcher.getCurrentHeight(),
                 this.anisotropicFiltering);
 
-        //Все спрайты в mapRegisteredSprites, которые вошли в stitcher, загрузить в текстуру openGL вместе с их мипмапами.
+
+        //В tempMapRegisteredIcons после загрузки текстурный данных в атлас остануться иконки, которые не вошли в атлас по каким то причинам.
         HashMap<String, AtlasIcon> tempMapRegisteredIcons = Maps.newHashMap(this.mapRegisteredIcons);
-        List<AtlasIcon> stichSlots = stitcher.getStitchSlots();
-        for (AtlasIcon atlasIcons : stichSlots) {
+        //Все иконки в mapRegisteredIcons, которые вошли в stitcher, загрузить в текстуру openGL.
+        List<AtlasIcon> stitchSlots = stitcher.getStitchSlots();
+        for (AtlasIcon atlasIcons : stitchSlots) {
             String iconName = atlasIcons.getIconName();
             tempMapRegisteredIcons.remove(iconName);
             this.mapUploadedIcons.put(iconName, atlasIcons);
@@ -155,18 +223,20 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
 
                 CrashReportCategory crashreportcategory1 = crashreport1.makeCategory("Texture being stitched together");
 
-                crashreportcategory1.addCrashSection("Atlas path", this.atlasPath);
+                crashreportcategory1.addCrashSection("Atlas path", this.atlasName);
                 crashreportcategory1.addCrashSection("Sprite", atlasIcons);
 
                 throw new ReportedException(crashreport1);
             }
         }
 
-        //Для всех, не вошедших в mapRegisteredSprites спрайтов, установить атрибуты от missingImage.
+        //Для всех, не вошедших в mapRegisteredIcons спрайтов, установить атрибуты от missingImage.
         for (AtlasIcon atlasSprite : tempMapRegisteredIcons.values()) {
             atlasSprite.copyFrom(this.missingImage);
         }
 
+        //Все иконки, у которых метод isAnimatedIcon() возвращает true, закастить в AnimatedAtlasIcon
+        //и добавить в список анимированных иконок.
         for (AtlasIcon icon : mapRegisteredIcons.values()) {
             if (icon.isAnimatedIcon()) {
                 listAnimatedIcons.add((AnimatedAtlasIcon) icon);
@@ -174,65 +244,28 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
         }
     }
 
-    /**
-     * Возвращает зарегистрированный спрайт по его имени.
-     */
-    public AtlasIcon getRegisteredParticleAtlasIcon(String iconName) {
-        return mapRegisteredIcons.get(iconName);
-    }
 
     /**
-     * Возвращает путь до папки с атласом.
-     * Все текстуры атласа должны храниться в этой папке.
+     * Вносит переданную иконку в список иконок для загрузки и формирования атласа с ней.
      */
-    public String getAtlasPath() {
-        return atlasPath;
-    }
+    public IIcon registerIcon(AtlasIcon icon) {
+        String iconName = icon.getIconName();
 
-    /**
-     * Возвращает уровень анизатропной фильтрации.
-     */
-    public int getAnisotropicFiltering() {
-        return anisotropicFiltering;
-    }
+        if (iconName == null) {
+            throw new IllegalArgumentException("Name cannot be null!");
+        } else if (iconName.indexOf(92) == -1) {  // Disable backslashes (\) in texture asset paths.
+            this.mapRegisteredIcons.put(iconName, icon);
 
-    /**
-     * Возвращает спрайт по имени, если он входит в текущий текстурный атлас.
-     * Иначе возвращается текстура-заглушка.
-     */
-    public AtlasIcon getAtlasIcon(String iconName) {
-        AtlasIcon particleAtlasIcon = this.mapUploadedIcons.get(iconName);
-        if (particleAtlasIcon == null) {
-            particleAtlasIcon = this.missingImage;
+            return icon;
+        } else {
+            throw new IllegalArgumentException("Name cannot contain slashes!");
         }
-
-        return particleAtlasIcon;
-    }
-
-    public AnimatedAtlasIcon getAnimatedAtlasIcon(String iconName) {
-        for (AnimatedAtlasIcon icon : listAnimatedIcons) {
-            if (icon.getIconName().equals(iconName)) {
-                return icon;
-            }
-        }
-
-        throw new RuntimeException("AnimatedAtlasIcon with name:" + iconName + " not found.");
     }
 
     /**
-     * Устанавливается уровень анизатропной фильтрации для атласа.
-     * Атлас с этим уровнем анизатропной фильтрации будет создан только после вызова loadTextureAtlas().
+     * Создает простую иконку с переданным именем иконки
+     * и вносит ее в список иконок для загрузки и формирования атласа с ней.
      */
-    public void setAnisotropicFiltering(int newAnisotropicFiltering) {
-        this.anisotropicFiltering = newAnisotropicFiltering;
-    }
-
-    @Override
-    public void loadTexture(IResourceManager resourceManager) throws IOException {}
-
-    @Override
-    public void tick() {}
-
     @Override
     public IIcon registerIcon(String iconName) {
         if (iconName == null) {
@@ -253,21 +286,13 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
     }
 
     /**
-     * Вносит переданную иконку в список иконок для загрузки и формирования атласа с ней.
+     * Метод ничего делает, т.к. текстура атласа не загружается, а формируется из других текстур.
      */
-    public IIcon registerIcon(AtlasIcon icon) {
-        String iconName = icon.getIconName();
+    @Override
+    public void loadTexture(IResourceManager resourceManager) throws IOException {}
 
-        if (iconName == null) {
-            throw new IllegalArgumentException("Name cannot be null!");
-        } else if (iconName.indexOf(92) == -1) {  // Disable backslashes (\) in texture asset paths.
-            this.mapRegisteredIcons.put(iconName, icon);
-
-            return icon;
-        } else {
-            throw new IllegalArgumentException("Name cannot contain slashes!");
-        }
-    }
+    @Override
+    public void tick() {}
 
 
     /**
@@ -297,16 +322,14 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
     /**
      * Загружает иконки из mapRegisteredIcons стандартным майновским способом.
      */
-    private void loadAllIcons(IResourceManager resourceManager, Stitcher stitcher, int maximumTextureSize) {
-        //сохранит количество текселей самой маленькой стороны спрайта среди всех спрайтов.
-
-        //здесь происходит загрузка спрайтов.
+    private void loadAllIcons(IResourceManager resourceManager, Stitcher stitcher) {
+        //здесь происходит загрузка текстур иконок.
         for (Map.Entry<String, AtlasIcon> entry : this.mapRegisteredIcons.entrySet()) {
-            ResourceLocation resourcelocation = new ResourceLocation(entry.getKey());
+            String iconName = entry.getKey();
             AtlasIcon textureAtlasSprite = entry.getValue();
-            ResourceLocation completeResourceLocation = this.completeResourceLocation(resourcelocation);
 
-        try {
+            ResourceLocation completeResourceLocation = this.completeResourceLocation(iconName);
+            try {
                 IResource textureImageResource = resourceManager.getResource(completeResourceLocation);
                 BufferedImage buffImageData = ImageIO.read(textureImageResource.getInputStream());
 
@@ -326,13 +349,16 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
     }
 
     /**
-     * В зависимости от номера мипмапа формирует путь до ресурса.
      * Путь до ресурса выглядит следующим образом:
-     * <p>atlasPath + "/" + iconLocation + ".png"
+     * <p>atlasPath + "/" + iconName + ".png"
      * <p>Примеры: "atlasPath/iconTexture.png".
      */
-    private ResourceLocation completeResourceLocation(ResourceLocation iconLocation) {
-        return new ResourceLocation(iconLocation.getResourceDomain(), String.format("%s/%s%s", this.atlasPath, iconLocation.getResourcePath(), ".png"));
+    private ResourceLocation completeResourceLocation(String iconName) {
+        int divider = iconName.indexOf(':');
+        String domain = iconName.substring(0, divider);
+        String path = iconName.substring(divider + 1, iconName.length());
+
+        return new ResourceLocation(domain, String.format("%s/%s%s", this.atlasName, path, ".png"));
     }
 
 }
