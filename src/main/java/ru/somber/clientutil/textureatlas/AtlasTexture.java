@@ -21,8 +21,8 @@ import org.apache.logging.log4j.Logger;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
-import ru.somber.clientutil.textureatlas.icon.MultiFrameAtlasIcon;
 import ru.somber.clientutil.textureatlas.icon.AtlasIcon;
+import ru.somber.clientutil.textureatlas.icon.MultiFrameAtlasIcon;
 import ru.somber.clientutil.textureatlas.stitcher.Stitcher;
 
 import javax.imageio.ImageIO;
