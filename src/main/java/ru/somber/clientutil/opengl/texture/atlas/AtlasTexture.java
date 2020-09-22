@@ -11,17 +11,13 @@ import net.minecraft.client.renderer.texture.ITickableTextureObject;
 import net.minecraft.client.renderer.texture.TextureUtil;
 import net.minecraft.client.resources.IResource;
 import net.minecraft.client.resources.IResourceManager;
-import net.minecraft.client.resources.data.TextureMetadataSection;
 import net.minecraft.crash.CrashReport;
 import net.minecraft.crash.CrashReportCategory;
 import net.minecraft.util.IIcon;
-import net.minecraft.util.MathHelper;
 import net.minecraft.util.ReportedException;
 import net.minecraft.util.ResourceLocation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL12;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -147,7 +143,7 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
                 UtilTextureSubDataUpload subDataUpload = new UtilTextureSubDataUpload();
                 //загрузить данные текстур в текстуру-атлас, по сути это glTexSubImage2D
                 subDataUpload.uploadTextureSub(
-                        atlasIcons.getTextureData(),
+                        atlasIcons.getTexelData(),
                         atlasIcons.getIconWidth(),
                         atlasIcons.getIconHeight(),
                         atlasIcons.getOriginX(),
@@ -295,7 +291,7 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
             this.missingImage.setIconHeight(16);
         }
 
-        this.missingImage.setTextureData(textureData);
+        this.missingImage.setTexelData(textureData);
     }
 
     /**
@@ -314,7 +310,7 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
                 IResource textureImageResource = resourceManager.getResource(completeResourceLocation);
                 BufferedImage buffImageData = ImageIO.read(textureImageResource.getInputStream());
 
-                textureAtlasSprite.loadSprite(buffImageData, this.anisotropicFiltering > 1);
+                textureAtlasSprite.loadIconData(buffImageData, this.anisotropicFiltering > 1);
             } catch (RuntimeException runtimeexception) {
                 //logger.error("Unable to parse metadata from " + completeResourceLocation, runtimeexception);
                 cpw.mods.fml.client.FMLClientHandler.instance().trackBrokenTexture(completeResourceLocation, runtimeexception.getMessage());

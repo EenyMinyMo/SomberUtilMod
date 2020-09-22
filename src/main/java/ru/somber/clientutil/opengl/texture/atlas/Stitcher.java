@@ -115,7 +115,7 @@ public class Stitcher {
         for (Slot stitchSlot : arraylist) {
             Holder holder = stitchSlot.getStitchHolder();
             AtlasIcon icon = holder.getAtlasSprite();
-            icon.initSprite(currentWidth, currentHeight, stitchSlot.getOriginX(), stitchSlot.getOriginY(), holder.isRotated());
+            icon.initIcon(currentWidth, currentHeight, stitchSlot.getOriginX(), stitchSlot.getOriginY(), holder.isRotated());
             iconList.add(icon);
         }
 

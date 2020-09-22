@@ -7,13 +7,29 @@ import net.minecraft.util.IIcon;
 
 import java.awt.image.BufferedImage;
 
+//Включена поддержка инвертированных по осям U и V текстур. (еще не включена)
+/**
+ * Класс для представления иконок.
+ * <p>
+ * Для использования прописывать название иконки следующим образом: "MOD_ID + ":название_файла_текстуры_иконки"".
+ * В качестве названия файла указывать только само название файла!
+ * Папки до файла текстуры не нужно (папки до текстуры должны быть прописаны в объекте текстуры атласа как название атласа).
+ */
 @SideOnly(Side.CLIENT)
 public class AtlasIcon implements IIcon {
+    /**
+     * Название иконки.
+     * По совместительству это и название файла с текстурой иконки.
+     * Название иконки должно иметь следущий формат "MOD_ID + ":название_файла_текстуры_иконки"".
+     */
     private final String iconName;
 
-    private int[] textureData;
+    /** Массив данных текселей соответствующей текстуры. */
+    private int[] texelData;
 
+    /** Флаг нужно ли учитывать использование анизатропной фильтрации при подготовке текселей текстуры. */
     private boolean useAnisotropicFiltering;
+    /** Флаг хранится ли текстура в текстурном атласе в перевернутом виде. */
     private boolean isRotated;
 
     private float minU;
@@ -21,11 +37,14 @@ public class AtlasIcon implements IIcon {
     private float minV;
     private float maxV;
 
-
+    /** Смещение начала текстуры иконки в текстурном атласе по оси X (в пикселях). */
     private int originX;
+    /** Смещение начала текстуры иконки в текстурном атласе по оси Y (в пикселях). */
     private int originY;
 
+    /** Высота текстуры иконки в текстурном атласе (в пикселях). */
     private int width;
+    /** Ширина текстуры иконки в текстурном атласе (в пикселях). */
     private int height;
 
 
@@ -33,119 +52,96 @@ public class AtlasIcon implements IIcon {
         this.iconName = iconName;
     }
 
+
     /**
-     * @param width - ширина в пикселях
-     * @param height - высота в пикселях
-     * @param originX - началная позиция по оси Х в пикселях (типо xMin, но в пискелях)
-     * @param originY - началная позиция по оси У в пикселях (типо уMin, но в пискелях)
-     * @param isRotated - нужно ли повенуть текстуру
+     * Иницализирует иконку переданными параметрами.
+     *
+     * @param width - высота текстуры иконки в текстурном атласе (в пикселях).
+     * @param height - ширина текстуры иконки в текстурном атласе (в пикселях).
+     * @param originX - смещение начала текстуры иконки в текстурном атласе по оси X (в пикселях).
+     * @param originY - смещение начала текстуры иконки в текстурном атласе по оси Y (в пикселях).
+     * @param isRotated - нужно ли повенуть текстуру.
      */
-    public void initSprite(int width, int height, int originX, int originY, boolean isRotated) {
+    public void initIcon(int width, int height, int originX, int originY, boolean isRotated) {
         this.originX = originX;
         this.originY = originY;
         this.isRotated = isRotated;
-        float f = (float) (0.009999999776482582D / (double) width);
-        float f1 = (float) (0.009999999776482582D / (double) height);
-        this.minU = (float) originX / (float) ((double) width) + f;
-        this.maxU = (float) (originX + this.width) / (float) ((double) width) - f;
-        this.minV = (float) originY / (float) height + f1;
-        this.maxV = (float) (originY + this.height) / (float) height - f1;
+
+        //не до конца уверен что это за переменные и что они делают.
+        //название этих переменных можн не совпадать с реальным назначением.
+        float widthOffset = (float) (0.009999999776482582D / width);
+        float heightOffset = (float) (0.009999999776482582D / height);
+
+        this.minU = (float) originX / width + widthOffset;
+        this.maxU = (float) (originX + this.width) / width - widthOffset;
+
+        this.minV = (float) originY / height + heightOffset;
+        this.maxV = (float) (originY + this.height) / height - heightOffset;
 
         if (this.useAnisotropicFiltering) {
-            float f2 = 8.0F / (float) width;
-            float f3 = 8.0F / (float) height;
-            this.minU += f2;
-            this.maxU -= f2;
-            this.minV += f3;
-            this.maxV -= f3;
+            float widthAnisotropicOffset = 8.0F / (float) width;
+            float heightAnisotropicOffset = 8.0F / (float) height;
+
+            this.minU += widthAnisotropicOffset;
+            this.maxU -= widthAnisotropicOffset;
+            this.minV += heightAnisotropicOffset;
+            this.maxV -= heightAnisotropicOffset;
         }
     }
 
+    /**
+     * Компирует данные иконки из переданной иконки.
+     */
     public void copyFrom(AtlasIcon icon) {
         this.originX = icon.originX;
         this.originY = icon.originY;
+
         this.width = icon.width;
         this.height = icon.height;
+
         this.isRotated = icon.isRotated;
+
         this.minU = icon.minU;
         this.maxU = icon.maxU;
         this.minV = icon.minV;
         this.maxV = icon.maxV;
     }
 
-    /**
-     * Returns the X position of this icon on its texture sheet, in pixels.
-     */
-    public int getOriginX() {
-        return this.originX;
-    }
-
-    /**
-     * Returns the Y position of this icon on its texture sheet, in pixels.
-     */
-    public int getOriginY() {
-        return this.originY;
-    }
-
-    /**
-     * Returns the width of the icon, in pixels.
-     */
     @Override
     public int getIconWidth() {
         return this.width;
     }
 
-    /**
-     * Returns the height of the icon, in pixels.
-     */
     @Override
     public int getIconHeight() {
         return this.height;
     }
 
-    /**
-     * Returns the minimum U coordinate to use when rendering with this icon.
-     */
     @Override
     public float getMinU() {
         return this.minU;
     }
 
-    /**
-     * Returns the maximum U coordinate to use when rendering with this icon.
-     */
     @Override
     public float getMaxU() {
         return this.maxU;
     }
 
-    /**
-     * Gets a U coordinate on the icon. 0 returns uMin and 16 returns uMax. Other arguments return in-between values.
-     */
     @Override
     public float getInterpolatedU(double interpolationFactor) {
         return minU + (maxU - minU) * (float) interpolationFactor / 16.0F;
     }
 
-    /**
-     * Returns the minimum V coordinate to use when rendering with this icon.
-     */
     @Override
     public float getMinV() {
         return this.minV;
     }
 
-    /**
-     * Returns the maximum V coordinate to use when rendering with this icon.
-     */
     @Override
     public float getMaxV() {
         return this.maxV;
     }
 
-    /**
-     * Gets a V coordinate on the icon. 0 returns vMin and 16 returns vMax. Other arguments return in-between values.
-     */
     @Override
     public float getInterpolatedV(double interpolatedFactor) {
         return minV + (maxV - minV) * ((float) interpolatedFactor / 16.0F);
@@ -157,24 +153,77 @@ public class AtlasIcon implements IIcon {
     }
 
 
+    /**
+     * Возвращает начальное положение X текстуры иконки в атласе текстур (в пикселях).
+     */
+    public int getOriginX() {
+        return this.originX;
+    }
+
+    /**
+     * Возвращает начальное положение Y текстуры иконки в атласе текстур (в пикселях).
+     */
+    public int getOriginY() {
+        return this.originY;
+    }
+
+    /**
+     * Устанавливает ширину иконки (в пикселях).
+     */
     public void setIconWidth(int newIconWidth) {
         this.width = newIconWidth;
     }
 
+    /**
+     * Устанавливает высоту иконки (в пикселях).
+     */
     public void setIconHeight(int newIconHeight) {
         this.height = newIconHeight;
     }
 
-    public int[] getTextureData() {
-        return textureData;
+    /**
+     * Возвращает массив с текстурными данными иконки.
+     */
+    public int[] getTexelData() {
+        return texelData;
     }
 
-    public void setTextureData(int[] textureData) {
-        this.textureData = textureData;
+    /**
+     * Устанавливает массив с текстурными данными иконки.
+     */
+    public void setTexelData(int[] texelData) {
+        this.texelData = texelData;
     }
 
-    public void loadSprite(BufferedImage bufferedimage, boolean p_147964_3_) {
-        this.useAnisotropicFiltering = p_147964_3_;
+    /**
+     * Возвращает true, если для этой иконки включен флаг ипользования анизатропной фильтрации.
+     * Этот флаг влияет на то, как загружается иконка.
+     */
+    public boolean isUseAnisotropicFiltering() {
+        return useAnisotropicFiltering;
+    }
+
+    /**
+     * Возвращает true, если иконка в атласе текстур хранится в перевернутом виде.
+     */
+    public boolean isRotated() {
+        return isRotated;
+    }
+
+    /**
+     * true, если иконка имеет анимацию.
+     */
+    public boolean isAnimatedIcon() {
+        return false;
+    }
+
+    /**
+     * Загружает из переданного буфера тексельные данные и подготавливает к использованию
+     * в качестве данных иконки с учетом флага использования анизатропной фильтрации.
+     * После вызова этого метода можно использовать texelData иконки.
+     */
+    public void loadIconData(BufferedImage bufferedimage, boolean useAnisotropicFiltering) {
+        this.useAnisotropicFiltering = useAnisotropicFiltering;
         int width = bufferedimage.getWidth();
         int height = bufferedimage.getHeight();
         this.width = width;
@@ -188,31 +237,62 @@ public class AtlasIcon implements IIcon {
         int[] texelDataArray = new int[bufferedimage.getWidth() * bufferedimage.getHeight()];
         bufferedimage.getRGB(0, 0, bufferedimage.getWidth(), bufferedimage.getHeight(), texelDataArray, 0, bufferedimage.getWidth());
 
+        //попробовать удалить эту проверку, чтобы появилась возможность грузить текстуры с разным соотношением сторон.
         if (height != width) {
             throw new RuntimeException("broken aspect ratio and not an animation");
         }
 
-        this.fixTransparentPixels(texelDataArray);
-        this.textureData = this.prepareAnisotropicFiltering(texelDataArray, width, height);
-    }
-
-    public boolean isAnimatedIcon() {
-        return false;
+        fixTransparentPixels(texelDataArray);
+        this.texelData = prepareAnisotropicFiltering(texelDataArray, width, height, isUseAnisotropicFiltering());
     }
 
 
-    private void fixTransparentPixels(int[] p_147961_1_) {
+    protected void setUseAnisotropicFiltering(boolean useAnisotropicFiltering) {
+        this.useAnisotropicFiltering = useAnisotropicFiltering;
+    }
+
+    protected void setRotated(boolean rotated) {
+        isRotated = rotated;
+    }
+
+    protected void setMinU(float minU) {
+        this.minU = minU;
+    }
+
+    protected void setMaxU(float maxU) {
+        this.maxU = maxU;
+    }
+
+    protected void setMinV(float minV) {
+        this.minV = minV;
+    }
+
+    protected void setMaxV(float maxV) {
+        this.maxV = maxV;
+    }
+
+    protected void setOriginX(int originX) {
+        this.originX = originX;
+    }
+
+    protected void setOriginY(int originY) {
+        this.originY = originY;
+    }
+
+
+
+    private static void fixTransparentPixels(int[] texelData) {
         int i = 0;
         int j = 0;
         int k = 0;
         int l = 0;
         int i1;
 
-        for (i1 = 0; i1 < p_147961_1_.length; ++i1) {
-            if ((p_147961_1_[i1] & -16777216) != 0) {
-                j += p_147961_1_[i1] >> 16 & 255;
-                k += p_147961_1_[i1] >> 8 & 255;
-                l += p_147961_1_[i1] >> 0 & 255;
+        for (i1 = 0; i1 < texelData.length; ++i1) {
+            if ((texelData[i1] & -16777216) != 0) {
+                j += texelData[i1] >> 16 & 255;
+                k += texelData[i1] >> 8 & 255;
+                l += texelData[i1] >> 0 & 255;
                 ++i;
             }
         }
@@ -222,16 +302,16 @@ public class AtlasIcon implements IIcon {
             k /= i;
             l /= i;
 
-            for (i1 = 0; i1 < p_147961_1_.length; ++i1) {
-                if ((p_147961_1_[i1] & -16777216) == 0) {
-                    p_147961_1_[i1] = j << 16 | k << 8 | l;
+            for (i1 = 0; i1 < texelData.length; ++i1) {
+                if ((texelData[i1] & -16777216) == 0) {
+                    texelData[i1] = j << 16 | k << 8 | l;
                 }
             }
         }
     }
 
-    private int[] prepareAnisotropicFiltering(int[] texelData, int width, int height) {
-        if (! this.useAnisotropicFiltering) {
+    private static int[] prepareAnisotropicFiltering(int[] texelData, int width, int height, boolean useAnisotropicFiltering) {
+        if (! useAnisotropicFiltering) {
             return texelData;
         } else {
             int[] texelAnisotropicData = texelData;
@@ -242,6 +322,7 @@ public class AtlasIcon implements IIcon {
             return texelAnisotropicData;
         }
     }
+
 
 //    private static int[][] getFrameTextureData(int[][] p_147962_0_, int p_147962_1_, int p_147962_2_, int p_147962_3_) {
 //        int[][] aint1 = new int[p_147962_0_.length][];
