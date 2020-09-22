@@ -7,6 +7,15 @@ import net.minecraft.util.MathHelper;
 
 import java.util.*;
 
+/**
+ * Сшиватель текстурного атласа.
+ * По сути это класс, вырезанный из майкрафта и переделанный под свои иконки.
+ * Почти весь функционал не тронут. Основные изменения связаны с:
+ * <p>-изменением класса иконки.
+ * <p>-изменением некоторых названий переменных и методов на более корректные (с моей точки зрения).
+ * <p>-добавлением документации (в документации может быть много неточностей ввиду того,
+ * что я не совсем хорошо разобрался с этим классом. Относись к докам с осторожностью).
+ */
 @SideOnly(Side.CLIENT)
 public class Stitcher {
     private final Set<Holder> stitchHolderSet = new HashSet<>(256);
@@ -16,7 +25,7 @@ public class Stitcher {
     private final int maxWidth;
     /** Максимально возможная высота. */
     private final int maxHeight;
-    /** Max size (width or height) of a single tile. */
+    /** Максимально возможный размер стороны тайла текстуры (в пикселях). */
     private final int maxTileDimension;
     /** Нужно ли форсировать размеры отдельных текстур как степеней двойки. */
     private final boolean forcePowerOf2;
@@ -33,7 +42,7 @@ public class Stitcher {
      * @param maxWidth максимально возможная ширина будущего атласа.
      * @param maxHeight максимально возможная высота будущего атласа.
      * @param forcePowerOf2 нужно ли специально делать размеры отдельных текстур в атласа равными степеням двойки.
-     * @param maxTileDimension максимально возможный размер и высоты отдельной текстуры в атласе.
+     * @param maxTileDimension максимально возможные размеры отдельной текстуры в атласе.
      */
     public Stitcher(int maxWidth, int maxHeight, boolean forcePowerOf2, int maxTileDimension) {
         this.maxWidth = maxWidth;
@@ -43,21 +52,21 @@ public class Stitcher {
     }
 
     /**
-     * Возвращает текущую ширину будущего атласа.
+     * Возвращает текущую ширину будущего атласа (в процессе сшивания может изменяться).
      */
     public int getCurrentWidth() {
         return this.currentWidth;
     }
 
     /**
-     * Возвращает текущую высота будущего атласа.
+     * Возвращает текущую высоту будущего атласа (в процессе сшивания может изменяться).
      */
     public int getCurrentHeight() {
         return this.currentHeight;
     }
 
     /**
-     * Добавляет иконку для добавления в текстурный атлас.
+     * Добавляет иконку для сшивания в текстурный атлас.
      */
     public void addSprite(AtlasIcon particleIcon) {
         Holder holder = new Holder(particleIcon);
@@ -71,7 +80,7 @@ public class Stitcher {
 
     /**
      * Производит сшивание атласа текстур.
-     * Перед сшшиваением добавте в сшиватель все иконки.
+     * Перед сшшиваением добавить в сшиватель все желаемые иконки.
      */
     public void doStitch() {
         Holder[] stitchHolderArray = stitchHolderSet.toArray(new Holder[stitchHolderSet.size()]);
@@ -92,7 +101,7 @@ public class Stitcher {
 
     /**
      * Возвращает лист слотов текстурного атласа.
-     * Из слота сшивателя можно вытащить иконку и другие данные об ее положении в атласе.
+     * Из слота сшивателя можно вытащить иконку и другие данные о ее положении в атласе.
      */
     public List<AtlasIcon> getStitchSlots() {
         ArrayList<Slot> arraylist = Lists.newArrayList();
@@ -113,8 +122,11 @@ public class Stitcher {
         return iconList;
     }
 
+
     /**
-     * Пытается найти место в будущем атласе для переданного держателя иконки.
+     * Пытается найти место в будущем атласе для переданного holder'a иконки.
+     * @return true, если holder успешно добавлен в какой-то из слотов, иначе false
+     * (true - holder окажется в будущем атласе, false - не окажется).
      */
     private boolean allocateSlot(Holder holder) {
         for (Slot slot : stitchSlotList) {
@@ -135,57 +147,84 @@ public class Stitcher {
     }
 
     /**
-     * Расширият сшитую текстуру, чтобы освободить место для переданного держателя текстуры.
+     * Расширият сшиватель, чтобы освободить место для переданного holder'a текстуры.
      */
     private boolean expandAndAllocateSlot(Holder holder) {
+        //минимальный и максимальный размер holder для помещения в сшиватель .
         int minHolderDimension = Math.min(holder.getWidth(), holder.getHeight());
-        boolean flag = currentWidth == 0 && currentHeight == 0;
-        boolean flag1;
-        int maxHolderDimension;
+        int maxHolderDimension = Math.max(holder.getWidth(), holder.getHeight());
 
-        if (this.forcePowerOf2) {
-            maxHolderDimension = MathHelper.roundUpToPowerOfTwo(currentWidth);
-            int k = MathHelper.roundUpToPowerOfTwo(currentHeight);
-            int l = MathHelper.roundUpToPowerOfTwo(currentWidth + minHolderDimension);
-            int i1 = MathHelper.roundUpToPowerOfTwo(currentHeight + minHolderDimension);
-            boolean flag2 = l <= maxWidth;
-            boolean flag3 = i1 <= maxHeight;
+        //флаг для проверки, что ститчер нулевого размера.
+        boolean stitcherIsEmpty = currentWidth == 0 && currentHeight == 0;
+        //флаг для проверки с какой стороны можно выделить дополнительные размеры.
+        //true - увеличивается размер ширины, false - увеличивается размеры высоты.
+        boolean possibleResizeWidth;
 
-            if (!flag2 && !flag3) {
+        //здесь мы пытаемся понять как изменятся размеры текстуры и не выйдут ли изменненые размеры за пределы максимальных размеров.
+        //если все ок, то продолжаем попытку выделить место, а если не все ок, то возвращаем false.
+        if (forcePowerOf2) {   //если размеры отдельных текстур строго должны быть степенями двойки.
+            //power of two текущих размеров.
+            int powerOfTwoWidth = MathHelper.roundUpToPowerOfTwo(currentWidth);
+            int powerOfTwoHeight = MathHelper.roundUpToPowerOfTwo(currentHeight);
+
+            //power of two текущих размеров вкупе с минимальными размерами holder'а.
+            int powerOfTwoWidthWithMinDimension = MathHelper.roundUpToPowerOfTwo(currentWidth + minHolderDimension);
+            int powerOfTwoHeightWithMinDimension = MathHelper.roundUpToPowerOfTwo(currentHeight + minHolderDimension);
+
+            //проверка не вышли ли мы за максимальные размеры текстуры при попытке выделить минимум места для holder'a.
+            boolean currentWidthLessThanMaxWidth = powerOfTwoWidthWithMinDimension <= maxWidth;
+            boolean currentHeightLessThanMaxHeight = powerOfTwoHeightWithMinDimension <= maxHeight;
+
+            if (!currentWidthLessThanMaxWidth && !currentHeightLessThanMaxHeight) {
+                //если при попытке выделить место в сшивателе мы упираемся в максимальные размеры, то выделелить место мы не можем.
                 return false;
             }
 
-            boolean flag4 = maxHolderDimension != l;
-            boolean flag5 = k != i1;
+            //проверка на то, изменятся ли ширина и высота про попытке выделить минимум места под holder.
+            boolean widthHasBecomeLarger = powerOfTwoWidth != powerOfTwoWidthWithMinDimension;
+            boolean heightHasBecomeLarger = powerOfTwoHeight != powerOfTwoHeightWithMinDimension;
 
-            if (flag4 ^ flag5) {
-                flag1 = !flag4;
+            //заполняем флаг размер какой стороны мы можем увеличить.
+            if (widthHasBecomeLarger ^ heightHasBecomeLarger) {
+                possibleResizeWidth = ! widthHasBecomeLarger;
             } else {
-                flag1 = flag2 && maxHolderDimension <= k;
+                possibleResizeWidth = currentWidthLessThanMaxWidth && powerOfTwoWidth <= powerOfTwoHeight;
             }
-        } else {
-            boolean flag6 = currentWidth + minHolderDimension <= maxWidth;
-            boolean flag7 = currentHeight + minHolderDimension <= maxHeight;
+        } else {    //если размеры отдельных текстур строго не ограничены (т.е. не обязательно степени двойки).
+            //проверка не вышли ли мы за максимальные размеры текстуры при попытке выделить минимум места для holder'a.
+            boolean currWidthLessThanMaxWidth = currentWidth + minHolderDimension <= maxWidth;
+            boolean currHeightLessThanMaxHeight = currentHeight + minHolderDimension <= maxHeight;
 
-            if (!flag6 && !flag7) {
+            if (!currWidthLessThanMaxWidth && !currHeightLessThanMaxHeight) {
+                //если при попытке выделить место в сшивателе мы упираемся в максимальные размеры, то выделелить место мы не можем.
                 return false;
             }
 
-            flag1 = flag6 && (flag || currentWidth <= currentHeight);
+            //заполняем флаг размер какой стороны мы можем увеличить.
+            possibleResizeWidth = currWidthLessThanMaxWidth && (stitcherIsEmpty || currentWidth <= currentHeight);
         }
 
-        maxHolderDimension = Math.max(holder.getWidth(), holder.getHeight());
 
-        if (MathHelper.roundUpToPowerOfTwo((flag1 ? currentHeight : currentWidth) + maxHolderDimension) > (flag1 ? maxHeight : maxWidth)) {
+        //в этом блоке кода мы пытаемся выделить место (расширить одну из сторон).
+        if (MathHelper.roundUpToPowerOfTwo((possibleResizeWidth ? currentHeight : currentWidth) + maxHolderDimension) > (possibleResizeWidth ? maxHeight : maxWidth)) {
+            //если мы не можем выделить с какой то из сторон место под максимальный резмер стороны holder'a, то выделить место мы не можем.
             return false;
         } else {
             Slot slot;
 
-            if (flag1) {
+            //выделяем место под слот в сшивателе с одной из сторон (в зависимости от флага possibleResizeWidth)
+            //и добавляем слот, чтобы туда поместить holder.
+            if (possibleResizeWidth) {
+                //поворачиваем holder, если ширина holder'a больше, чем высота
+                //(чтобы по !выделяемой ширине выделить меньше места!).
+                //Суть в том, что если мы попали в это место,
+                //то лишнего места по высоте в свшивателе мы выделять сейчас точно не будем,
+                //так что о высоте задумываться не нужно, а вот выделить меньше места по ширине это хорошо.
                 if (holder.getWidth() > holder.getHeight()) {
                     holder.rotate();
                 }
 
+                //если вдруг высота вообще 0 (до этого текстуры не добавлялись), то высота примет размер высоты holder'а.
                 if (currentHeight == 0) {
                     currentHeight = holder.getHeight();
                 }
@@ -197,6 +236,7 @@ public class Stitcher {
                 currentHeight += holder.getHeight();
             }
 
+            //в новый слот впихиваем
             slot.addSlot(holder);
             stitchSlotList.add(slot);
             return true;
@@ -205,7 +245,7 @@ public class Stitcher {
 
 
     /**
-     * Класс держателя иконки и дополнительных данных о ней.
+     * Класс держателя (holder) иконки и дополнительных данных о ней.
      */
     @SideOnly(Side.CLIENT)
     public static class Holder implements Comparable<Holder> {
@@ -224,7 +264,7 @@ public class Stitcher {
 
 
         /**
-         * Создает держатель иконки для переданной иконки.
+         * Создает holder иконки для переданной иконки.
          */
         public Holder(AtlasIcon icon) {
             this.particleIcon = icon;
@@ -234,7 +274,7 @@ public class Stitcher {
         }
 
         /**
-         * Возвращает соответствующиую иконку.
+         * Возвращает хранимую иконку.
          */
         public AtlasIcon getAtlasSprite() {
             return particleIcon;
@@ -320,12 +360,12 @@ public class Stitcher {
 
     /**
      * Класс слота в сшивателе.
-     * Слот может хранить один держатель иконки (если иконка имеет размер слота) или лист слотов,
+     * Слот может хранить один holder иконки (если иконка имеет размер слота) или лист слотов,
      * размеры которых меньше размеров слота.
      */
     @SideOnly(Side.CLIENT)
     public static class Slot {
-        /** Держатель иконки и ее данных в  */
+        /** Holder иконки и ее данных в  */
         private Holder holder;
         /** Лист слотов меньшего размера, котрые хранятся в данном слоте. */
         private List<Slot> subSlots;
@@ -348,7 +388,7 @@ public class Stitcher {
         }
 
         /**
-         * Возвращает соответствующий держатель иконки.
+         * Возвращает соответствующий holder иконки.
          */
         public Holder getStitchHolder()
         {
