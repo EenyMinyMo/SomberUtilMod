@@ -18,10 +18,14 @@ import net.minecraft.util.ReportedException;
 import net.minecraft.util.ResourceLocation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL12;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.nio.IntBuffer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -359,6 +363,67 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
         String path = iconName.substring(divider + 1, iconName.length());
 
         return new ResourceLocation(domain, String.format("%s/%s%s", this.atlasName, path, ".png"));
+    }
+
+
+    /**
+     * Утилитный класс для применения метода glTexSubImage2D.
+     * По сути это вырезка из майкрафтовского TextureUtil.
+     */
+    private static class UtilTextureSubDataUpload {
+
+        private final IntBuffer dataBuffer;
+
+
+        public UtilTextureSubDataUpload() {
+            dataBuffer = BufferUtils.createIntBuffer(4_194_304);
+        }
+
+
+        public void uploadTextureSub(int[] texelData, int width, int height, int originX, int originY, boolean useLinearFilter, boolean useClampWrap) {
+            int j1 = 4_194_304 / width;
+            setTextureFilter(useLinearFilter);
+            setTextureClamped(useClampWrap);
+            int i2;
+
+            for (int k1 = 0; k1 < width * height; k1 += width * i2) {
+                int l1 = k1 / width;
+                i2 = Math.min(j1, height - l1);
+                int j2 = width * i2;
+                copyToBufferPos(texelData, k1, j2);
+                GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, originX, originY + l1, width, i2, GL12.GL_BGRA, GL12.GL_UNSIGNED_INT_8_8_8_8_REV, dataBuffer);
+            }
+
+            dataBuffer.clear();
+        }
+
+
+        private void setTextureFilter(boolean useLinearFilter) {
+            if (useLinearFilter) {
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+            } else {
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+            }
+        }
+
+        private void setTextureClamped(boolean useClampWrap) {
+            if (useClampWrap) {
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_CLAMP);
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_CLAMP);
+            } else {
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
+            }
+        }
+
+        private void copyToBufferPos(int[] data, int offset, int dataLength) {
+            dataBuffer.clear();
+            dataBuffer.put(data, offset, dataLength);
+            dataBuffer.position(0).limit(dataLength);
+        }
+
     }
 
 }
