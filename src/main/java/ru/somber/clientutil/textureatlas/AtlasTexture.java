@@ -21,7 +21,7 @@ import org.apache.logging.log4j.Logger;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
-import ru.somber.clientutil.textureatlas.icon.AnimatedAtlasIcon;
+import ru.somber.clientutil.textureatlas.icon.MultiFrameAtlasIcon;
 import ru.somber.clientutil.textureatlas.icon.AtlasIcon;
 import ru.somber.clientutil.textureatlas.stitcher.Stitcher;
 
@@ -82,9 +82,9 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
      */
     private final Map<String, AtlasIcon> mapUploadedIcons = Maps.newHashMap();
     /**
-     * Список иконок, которые могут в анимацию (объекты от AnimatedAtlasIcon и наследников).
+     * Список иконок, у которых есть внутренние фреймы.
      */
-    private final List<AnimatedAtlasIcon> listAnimatedIcons = Lists.newArrayList();
+    private final List<MultiFrameAtlasIcon> listMultiFramesIcons = Lists.newArrayList();
 
     /** Уровень анизатропной фильтрации для этого алтаса. */
     private int anisotropicFiltering = 1;
@@ -151,17 +151,17 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
     }
 
     /**
-     * Возвращает анимированную иконку по имени, если она входит в текущий текстурный атлас.
-     * Иначе выбрасывается RuntimeException.
+     * Возвращает мультифреймовую иконку по имени, если она входит в текущий текстурный атлас.
+     * Если иконка не найдена, выбрасывается RuntimeException.
      */
-    public AnimatedAtlasIcon getAnimatedAtlasIcon(String iconName) {
-        for (AnimatedAtlasIcon icon : listAnimatedIcons) {
+    public MultiFrameAtlasIcon getMultiFramesAtlasIcon(String iconName) {
+        for (MultiFrameAtlasIcon icon : listMultiFramesIcons) {
             if (icon.getIconName().equals(iconName)) {
                 return icon;
             }
         }
 
-        throw new RuntimeException("AnimatedAtlasIcon with name:" + iconName + " not found.");
+        throw new RuntimeException("MultiFrameAtlasIcon with name:" + iconName + " not found.");
     }
 
     /**
@@ -180,7 +180,7 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
 
         //Очищаем все загруженные иконки, коллекции будут заполнены далее новыми иконками.
         this.mapUploadedIcons.clear();
-        this.listAnimatedIcons.clear();
+        this.listMultiFramesIcons.clear();
 
         //инициализация ститчера.
         int maximumTextureSize = Minecraft.getGLMaximumTextureSize();
@@ -242,11 +242,11 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
             atlasSprite.copyFrom(this.missingImage);
         }
 
-        //Все иконки, у которых метод isAnimatedIcon() возвращает true, закастить в AnimatedAtlasIcon
-        //и добавить в список анимированных иконок.
+        //Все иконки, у которых метод isMultiFramesIcon() возвращает true, закастить в MultiFrameAtlasIcon
+        //и добавить в список мультифреймовых иконок.
         for (AtlasIcon icon : mapRegisteredIcons.values()) {
-            if (icon.isAnimatedIcon()) {
-                listAnimatedIcons.add((AnimatedAtlasIcon) icon);
+            if (icon.isMultiFramesIcon()) {
+                listMultiFramesIcons.add((MultiFrameAtlasIcon) icon);
             }
         }
     }

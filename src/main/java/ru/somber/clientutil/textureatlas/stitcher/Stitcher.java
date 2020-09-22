@@ -123,6 +123,20 @@ public class Stitcher {
         return iconList;
     }
 
+    @Override
+    public String toString() {
+        return "Stitcher{" +
+                "stitchHolderSet=" + stitchHolderSet +
+                ", stitchSlotList=" + stitchSlotList +
+                ", maxWidth=" + maxWidth +
+                ", maxHeight=" + maxHeight +
+                ", maxTileDimension=" + maxTileDimension +
+                ", forcePowerOf2=" + forcePowerOf2 +
+                ", currentWidth=" + currentWidth +
+                ", currentHeight=" + currentHeight +
+                '}';
+    }
+
 
     /**
      * Пытается найти место в будущем атласе для переданного holder'a иконки.

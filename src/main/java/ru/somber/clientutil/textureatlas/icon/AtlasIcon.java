@@ -210,9 +210,9 @@ public class AtlasIcon implements IIcon {
     }
 
     /**
-     * true, если иконка имеет анимацию.
+     * true, если иконка имеет вложенные фреймы.
      */
-    public boolean isAnimatedIcon() {
+    public boolean isMultiFramesIcon() {
         return false;
     }
 
