@@ -2,14 +2,13 @@ package ru.somber.clientutil.opengl.texture.atlas;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
-import net.minecraft.client.renderer.texture.TextureUtil;
 import net.minecraft.util.IIcon;
 
 import java.awt.image.BufferedImage;
 
 //Включена поддержка инвертированных по осям U и V текстур. (еще не включена)
 /**
- * Класс для представления иконок.
+ * Класс для представления иконок (по большей части это копия класса спрайта текстурного атласа из майкнрафта, но выпилен бесполезный функционал).
  * <p>
  * Для использования прописывать название иконки следующим образом: "MOD_ID + ":название_файла_текстуры_иконки"".
  * В качестве названия файла указывать только само название файла!
@@ -317,10 +316,45 @@ public class AtlasIcon implements IIcon {
             int[] texelAnisotropicData = texelData;
             int[] tempTexelData = new int[width * height];
             System.arraycopy(texelAnisotropicData, 0, tempTexelData, 0, texelAnisotropicData.length);
-            texelAnisotropicData = TextureUtil.prepareAnisotropicData(tempTexelData, width, height, 8);
+            texelAnisotropicData = prepareAnisotropicData(tempTexelData, width, height, 8);
 
             return texelAnisotropicData;
         }
+    }
+
+    private static int[] prepareAnisotropicData(int[] texelData, int width, int height, int anisotropicTexelOffset) {
+        int l = width + 2 * anisotropicTexelOffset;
+        int i1;
+        int j1;
+
+        for (i1 = height - 1; i1 >= 0; --i1) {
+            j1 = i1 * width;
+            int k1 = anisotropicTexelOffset + (i1 + anisotropicTexelOffset) * l;
+            int l1;
+
+            for (l1 = 0; l1 < anisotropicTexelOffset; l1 += width) {
+                int i2 = Math.min(width, anisotropicTexelOffset - l1);
+                System.arraycopy(texelData, j1 + width - i2, texelData, k1 - l1 - i2, i2);
+            }
+
+            System.arraycopy(texelData, j1, texelData, k1, width);
+
+            for (l1 = 0; l1 < anisotropicTexelOffset; l1 += width) {
+                System.arraycopy(texelData, j1, texelData, k1 + width + l1, Math.min(width, anisotropicTexelOffset - l1));
+            }
+        }
+
+        for (i1 = 0; i1 < anisotropicTexelOffset; i1 += height) {
+            j1 = Math.min(height, anisotropicTexelOffset - i1);
+            System.arraycopy(texelData, (anisotropicTexelOffset + height - j1) * l, texelData, (anisotropicTexelOffset - i1 - j1) * l, l * j1);
+        }
+
+        for (i1 = 0; i1 < anisotropicTexelOffset; i1 += height) {
+            j1 = Math.min(height, anisotropicTexelOffset - i1);
+            System.arraycopy(texelData, anisotropicTexelOffset * l, texelData, (height + anisotropicTexelOffset + i1) * l, l * j1);
+        }
+
+        return texelData;
     }
 
 
