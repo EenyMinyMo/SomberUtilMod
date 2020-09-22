@@ -6,9 +6,9 @@ import net.minecraft.util.IIcon;
 
 import java.awt.image.BufferedImage;
 
-//Включена поддержка инвертированных по осям U и V текстур. (еще не включена)
 /**
  * Класс для представления иконок (по большей части это копия класса спрайта текстурного атласа из майкнрафта, но выпилен бесполезный функционал).
+ * Включена поддержка инвертированных по осям U и V текстур.
  * <p>
  * Для использования прописывать название иконки следующим образом: "MOD_ID + ":название_файла_текстуры_иконки"".
  * В качестве названия файла указывать только само название файла!
@@ -46,45 +46,69 @@ public class AtlasIcon implements IIcon {
     /** Ширина текстуры иконки в текстурном атласе (в пикселях). */
     private int height;
 
+    /** Флаг нужно ли инвертировать текстурные координты U. */
+    private boolean isInvertedU;
+    /** Флаг нужно ли инвертировать текстурные координты V. */
+    private boolean isInvertedV;
 
-    public AtlasIcon(String iconName, boolean b) {
+
+    /**
+     * @param iconName имя иконки.
+     * @param invertU нужно ли инвертировать текстурные координаты по оси U.
+     * @param invertV нужно ли инвертировать текстурные координаты по оси V.
+     */
+    public AtlasIcon(String iconName, boolean invertU, boolean invertV) {
         this.iconName = iconName;
+        this.isInvertedU = invertU;
+        this.isInvertedV = invertV;
     }
 
 
     /**
      * Иницализирует иконку переданными параметрами.
      *
-     * @param width - высота текстуры иконки в текстурном атласе (в пикселях).
-     * @param height - ширина текстуры иконки в текстурном атласе (в пикселях).
-     * @param originX - смещение начала текстуры иконки в текстурном атласе по оси X (в пикселях).
-     * @param originY - смещение начала текстуры иконки в текстурном атласе по оси Y (в пикселях).
+     * @param widthAtlas - ширина атласа текстур, куда вошла эта иконка (в пикселях).
+     * @param heightAtlas - высота атласа текстур, куда вошла эта иконка (в пикселях).
+     * @param originXInAtlas - смещение начала текстуры иконки в текстурном атласе по оси X (в пикселях).
+     * @param originYInAtlas - смещение начала текстуры иконки в текстурном атласе по оси Y (в пикселях).
      * @param isRotated - нужно ли повенуть текстуру.
      */
-    public void initIcon(int width, int height, int originX, int originY, boolean isRotated) {
-        this.originX = originX;
-        this.originY = originY;
+    public void initIcon(int widthAtlas, int heightAtlas, int originXInAtlas, int originYInAtlas, boolean isRotated) {
+        this.originX = originXInAtlas;
+        this.originY = originYInAtlas;
         this.isRotated = isRotated;
 
         //не до конца уверен что это за переменные и что они делают.
         //название этих переменных можн не совпадать с реальным назначением.
-        float widthOffset = (float) (0.009999999776482582D / width);
-        float heightOffset = (float) (0.009999999776482582D / height);
+        double widthOffset = 0.01D / widthAtlas;
+        double heightOffset = 0.01D / heightAtlas;
 
-        this.minU = (float) originX / width + widthOffset;
-        this.maxU = (float) (originX + this.width) / width - widthOffset;
+        this.minU = (float) ((double) originXInAtlas / widthAtlas + widthOffset);
+        this.maxU = (float) ((double) (originXInAtlas + this.width) / widthAtlas - widthOffset);
 
-        this.minV = (float) originY / height + heightOffset;
-        this.maxV = (float) (originY + this.height) / height - heightOffset;
+        this.minV = (float) ((double) originYInAtlas / heightAtlas + heightOffset);
+        this.maxV = (float) ((double) (originYInAtlas + this.height) / heightAtlas - heightOffset);
 
         if (this.useAnisotropicFiltering) {
-            float widthAnisotropicOffset = 8.0F / (float) width;
-            float heightAnisotropicOffset = 8.0F / (float) height;
+            float widthAnisotropicOffset = 8.0F / (float) widthAtlas;
+            float heightAnisotropicOffset = 8.0F / (float) heightAtlas;
 
             this.minU += widthAnisotropicOffset;
             this.maxU -= widthAnisotropicOffset;
             this.minV += heightAnisotropicOffset;
             this.maxV -= heightAnisotropicOffset;
+        }
+
+        if (isInvertedU) {
+            float temp = minU;
+            minU = maxU;
+            maxU = temp;
+        }
+
+        if (isInvertedV) {
+            float temp = minV;
+            minV = maxV;
+            maxV = temp;
         }
     }
 
@@ -214,6 +238,38 @@ public class AtlasIcon implements IIcon {
      */
     public boolean isMultiFramesIcon() {
         return false;
+    }
+
+    /**
+     * Возвращает true, если текстурные координаты minU и maxU будут браться наоборот (т.е. minU на самом деле maxU и наоборот).
+     * Если возвращается false, то ничего не меняется.
+     */
+    public boolean isInvertedU() {
+        return isInvertedU;
+    }
+
+    /**
+     * Возвращает true, если текстурные координаты minV и maxV будут браться наоборот (т.е. minV на самом деле maxV и наоборот).
+     * Если возвращается false, то ничего не меняется.
+     */
+    public boolean isInvertedV() {
+        return isInvertedV;
+    }
+
+    /**
+     * Устанавливает будут ли браться текстурные координаты minU и maxU наоборот.
+     * Изменения вступят в силу только после вызова initIcon().
+     */
+    public void setInvertedU(boolean invertedU) {
+        isInvertedU = invertedU;
+    }
+
+    /**
+     * Устанавливает будут ли браться текстурные координаты minV и maxV наоборот.
+     * Изменения вступят в силу только после вызова initIcon().
+     */
+    public void setInvertedV(boolean invertedV) {
+        isInvertedV = invertedV;
     }
 
     /**
@@ -357,21 +413,5 @@ public class AtlasIcon implements IIcon {
 
         return texelData;
     }
-
-
-//    private static int[][] getFrameTextureData(int[][] p_147962_0_, int p_147962_1_, int p_147962_2_, int p_147962_3_) {
-//        int[][] aint1 = new int[p_147962_0_.length][];
-//
-//        for (int l = 0; l < p_147962_0_.length; ++l) {
-//            int[] aint2 = p_147962_0_[l];
-//
-//            if (aint2 != null) {
-//                aint1[l] = new int[(p_147962_1_ >> l) * (p_147962_2_ >> l)];
-//                System.arraycopy(aint2, p_147962_3_ * aint1[l].length, aint1[l], 0, aint1[l].length);
-//            }
-//        }
-//
-//        return aint1;
-//    }
 
 }

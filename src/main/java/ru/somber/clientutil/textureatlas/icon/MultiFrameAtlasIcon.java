@@ -24,8 +24,8 @@ public class MultiFrameAtlasIcon extends AtlasIcon {
     private final AtlasIcon[] frameIcons;
 
 
-    public MultiFrameAtlasIcon(String iconName, int countFrameColumn, int countFrameRow, boolean isInverted) {
-        super(iconName, isInverted);
+    public MultiFrameAtlasIcon(String iconName, int countFrameColumn, int countFrameRow, boolean invertU, boolean invertV) {
+        super(iconName, invertU, invertV);
 
         this.countFrameColumn = countFrameColumn;
         this.countFrameRow = countFrameRow;
@@ -36,8 +36,8 @@ public class MultiFrameAtlasIcon extends AtlasIcon {
 
 
     @Override
-    public void initIcon(int width, int height, int originX, int originY, boolean rotated) {
-        super.initIcon(width, height, originX, originY, rotated);
+    public void initIcon(int widthAtlas, int heightAtlas, int originXInAtlas, int originYInAtlas, boolean rotated) {
+        super.initIcon(widthAtlas, heightAtlas, originXInAtlas, originYInAtlas, rotated);
 
         int frameWidth = getIconWidth() / countFrameColumn;
         int frameHeight = getIconHeight() / countFrameRow;
@@ -45,24 +45,17 @@ public class MultiFrameAtlasIcon extends AtlasIcon {
             int currentFrameColumn = i % countFrameColumn;
             int currentFrameRow = i / countFrameColumn;
 
-//            float animatedMinU = super.getMinU() + (currentFrameColumn + 0.0F) / countFrameColumn * (super.getMaxU() - super.getMinU());
-//            float animatedMaxU = super.getMinU() + (currentFrameColumn + 1.0F) / countFrameColumn * (super.getMaxU() - super.getMinU());
-//
-//            float animatedMinV = super.getMinV() + (currentFrameRow + 0.0F) / countFrameRow * (super.getMaxV() - super.getMinV());
-//            float animatedMaxV = super.getMinV() + (currentFrameRow + 1.0F) / countFrameRow * (super.getMaxV() - super.getMinV());
-//
-//            if (isInvertedY()) {
-//                animatedMinV = super.getMinV() + (currentFrameRow + 1.0F) / countFrameRow * (super.getMaxV()- super.getMinV());
-//                animatedMaxV = super.getMinV() + (currentFrameRow + 0.0F) / countFrameRow * (super.getMaxV()- super.getMinV());
-//            }
+            AtlasIcon iconFrame = new AtlasIcon(getIconName() + "_frame_" + i, isInvertedU(), isInvertedV());
+            iconFrame.setUseAnisotropicFiltering(isUseAnisotropicFiltering());
+            iconFrame.setIconWidth(frameWidth);
+            iconFrame.setIconHeight(frameHeight);
 
-
-            AtlasIcon iconFrame = new AtlasIcon(getIconName() + "_frame_" + i, true);
-            iconFrame.initIcon(frameWidth, frameHeight, currentFrameColumn * width + getOriginX(), currentFrameRow * height + getOriginX(), isRotated());
+            int originXFrame = currentFrameColumn * frameWidth + getOriginX();
+            int originYFrame = currentFrameRow * frameHeight + getOriginY();
+            iconFrame.initIcon(widthAtlas, heightAtlas, originXFrame, originYFrame, isRotated());
 
             frameIcons[i] = iconFrame;
         }
-
     }
 
     /**

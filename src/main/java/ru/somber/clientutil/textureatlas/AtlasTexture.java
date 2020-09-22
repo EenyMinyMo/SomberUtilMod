@@ -69,7 +69,7 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
     private final String atlasName;
 
     /** Иконка для отсутствующих текстур. */
-    private final AtlasIcon missingImage = new AtlasIcon("missingno", false);
+    private final AtlasIcon missingImage = new AtlasIcon("missingno", false, false);
 
     /**
      * Здесь хранятся иконки, которые будут загружаться.
@@ -281,7 +281,7 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
             AtlasIcon textureAtlasSprite = this.mapRegisteredIcons.get(iconName);
 
             if (textureAtlasSprite == null) {
-                textureAtlasSprite = new AtlasIcon(iconName, false);
+                textureAtlasSprite = new AtlasIcon(iconName, false, true);
 
                 this.mapRegisteredIcons.put(iconName, textureAtlasSprite);
             }
