@@ -96,7 +96,7 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
      *                  atlasName должен быть следующего формата: "MOD_ID:путь_до_папки_с_текстурами"
      */
     public AtlasTexture(String atlasName) {
-        this(atlasName, 1);
+        this(atlasName, 16);
     }
 
     /**
