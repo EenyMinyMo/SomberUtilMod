@@ -42,7 +42,7 @@ public class Stitcher {
      * @param maxWidth максимально возможная ширина будущего атласа.
      * @param maxHeight максимально возможная высота будущего атласа.
      * @param forcePowerOf2 нужно ли специально делать размеры отдельных текстур в атласа равными степеням двойки.
-     * @param maxTileDimension максимально возможные размеры отдельной текстуры в атласе.
+     * @param maxTileDimension максимально возможные размеры отдельной текстуры в атласе (указать 0, если ограничения ну нужно).
      */
     public Stitcher(int maxWidth, int maxHeight, boolean forcePowerOf2, int maxTileDimension) {
         this.maxWidth = maxWidth;
