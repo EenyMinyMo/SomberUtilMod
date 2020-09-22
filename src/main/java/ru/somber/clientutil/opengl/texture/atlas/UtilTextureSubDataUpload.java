@@ -1,6 +1,6 @@
 package ru.somber.clientutil.opengl.texture.atlas;
 
-import net.minecraft.client.renderer.GLAllocation;
+import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 
@@ -16,7 +16,7 @@ public class UtilTextureSubDataUpload {
 
 
     public UtilTextureSubDataUpload() {
-        dataBuffer = GLAllocation.createDirectIntBuffer(4_194_304);
+        dataBuffer = BufferUtils.createIntBuffer(4_194_304);
     }
 
 
