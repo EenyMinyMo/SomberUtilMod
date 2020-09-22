@@ -322,6 +322,7 @@ public class AtlasIcon implements IIcon {
         }
     }
 
+    /* копия метода из майкрафтовского TextureUtil. */
     private static int[] prepareAnisotropicData(int[] texelData, int width, int height, int anisotropicTexelOffset) {
         int l = width + 2 * anisotropicTexelOffset;
         int i1;
