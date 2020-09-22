@@ -86,8 +86,11 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
      */
     private final List<MultiFrameAtlasIcon> listMultiFramesIcons = Lists.newArrayList();
 
-    /** Уровень анизатропной фильтрации для этого алтаса. */
-    private int anisotropicFiltering = 1;
+    /**
+     * Уровень анизатропной фильтрации для этого алтаса.
+     * Заметка: ставить в 2 и больше, чтобы убрать артефакты на границах отдельных текстур.
+     */
+    private int anisotropicFiltering;
 
 
     /**
@@ -96,7 +99,7 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
      *                  atlasName должен быть следующего формата: "MOD_ID:путь_до_папки_с_текстурами"
      */
     public AtlasTexture(String atlasName) {
-        this(atlasName, 16);
+        this(atlasName, 2);
     }
 
     /**
