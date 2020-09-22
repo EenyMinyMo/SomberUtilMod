@@ -147,7 +147,9 @@ public class Stitcher {
     }
 
     /**
-     * Расширият сшиватель, чтобы освободить место для переданного holder'a текстуры.
+     * Расширият сшиватель, чтобы освободить место и добавить переданный holder с иконкой текстуры.
+     * @return true, если место под holder успешно выделено и он добавлен в сшиватель,
+     *      иначе false (значит места под этот holder в сшивателе просто нет).
      */
     private boolean expandAndAllocateSlot(Holder holder) {
         //минимальный и максимальный размер holder для помещения в сшиватель .
@@ -214,7 +216,7 @@ public class Stitcher {
 
             //выделяем место под слот в сшивателе с одной из сторон (в зависимости от флага possibleResizeWidth)
             //и добавляем слот, чтобы туда поместить holder.
-            if (possibleResizeWidth) {
+            if (possibleResizeWidth) {  //увеличиваем размер сшивателя по ширине.
                 //поворачиваем holder, если ширина holder'a больше, чем высота
                 //(чтобы по !выделяемой ширине выделить меньше места!).
                 //Суть в том, что если мы попали в это место,
@@ -229,17 +231,19 @@ public class Stitcher {
                     currentHeight = holder.getHeight();
                 }
 
+                //создаем новый слот с указанными размерами и увеличиваем ширину сшивателя.
                 slot = new Slot(currentWidth, 0, holder.getWidth(), currentHeight);
                 currentWidth += holder.getWidth();
-            } else {
+            } else {    //увеличиваем размер сшивателя по высоте.
+                //создаем новый слот с указанными размерами и увеличиваем высоту сшивателя.
                 slot = new Slot(0, currentHeight, currentWidth, holder.getHeight());
                 currentHeight += holder.getHeight();
             }
 
-            //в новый слот впихиваем
+            //в новый слот помещаем holder, который и требуется добавить, и добавляем слот в сшиватель.
             slot.addSlot(holder);
             stitchSlotList.add(slot);
-            return true;
+            return true;    //слот успешно добавлен, поэтому возвращает true.
         }
     }
 
