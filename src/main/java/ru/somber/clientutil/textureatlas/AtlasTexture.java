@@ -69,7 +69,7 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
     private final String atlasName;
 
     /** Иконка для отсутствующих текстур. */
-    private final AtlasIcon missingImage = new AtlasIcon("missingno");
+    private final AtlasIcon missingImage = new AtlasIcon("missingno", false);
 
     /**
      * Здесь хранятся иконки, которые будут загружаться.
@@ -209,13 +209,13 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
         HashMap<String, AtlasIcon> tempMapRegisteredIcons = Maps.newHashMap(this.mapRegisteredIcons);
         //Все иконки в mapRegisteredIcons, которые вошли в stitcher, загрузить в текстуру openGL.
         List<AtlasIcon> stitchSlots = stitcher.getStitchSlots();
+        UtilTextureSubDataUpload subDataUpload = new UtilTextureSubDataUpload();
         for (AtlasIcon atlasIcons : stitchSlots) {
             String iconName = atlasIcons.getIconName();
             tempMapRegisteredIcons.remove(iconName);
             this.mapUploadedIcons.put(iconName, atlasIcons);
 
             try {
-                UtilTextureSubDataUpload subDataUpload = new UtilTextureSubDataUpload();
                 //загрузить данные текстур в текстуру-атлас, по сути это glTexSubImage2D
                 subDataUpload.uploadTextureSub(
                         atlasIcons.getTexelData(),
@@ -281,7 +281,7 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
             AtlasIcon textureAtlasSprite = this.mapRegisteredIcons.get(iconName);
 
             if (textureAtlasSprite == null) {
-                textureAtlasSprite = new AtlasIcon(iconName);
+                textureAtlasSprite = new AtlasIcon(iconName, false);
 
                 this.mapRegisteredIcons.put(iconName, textureAtlasSprite);
             }

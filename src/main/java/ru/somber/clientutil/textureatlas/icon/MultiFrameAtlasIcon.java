@@ -25,7 +25,7 @@ public class MultiFrameAtlasIcon extends AtlasIcon {
 
 
     public MultiFrameAtlasIcon(String iconName, int countFrameColumn, int countFrameRow, boolean isInverted) {
-        super(iconName);
+        super(iconName, isInverted);
 
         this.countFrameColumn = countFrameColumn;
         this.countFrameRow = countFrameRow;
@@ -57,7 +57,7 @@ public class MultiFrameAtlasIcon extends AtlasIcon {
 //            }
 
 
-            AtlasIcon iconFrame = new AtlasIcon(getIconName() + "_frame_" + i);
+            AtlasIcon iconFrame = new AtlasIcon(getIconName() + "_frame_" + i, true);
             iconFrame.initIcon(frameWidth, frameHeight, currentFrameColumn * width + getOriginX(), currentFrameRow * height + getOriginX(), isRotated());
 
             frameIcons[i] = iconFrame;

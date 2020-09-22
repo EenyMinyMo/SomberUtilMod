@@ -47,7 +47,7 @@ public class AtlasIcon implements IIcon {
     private int height;
 
 
-    public AtlasIcon(String iconName) {
+    public AtlasIcon(String iconName, boolean b) {
         this.iconName = iconName;
     }
 
@@ -314,7 +314,7 @@ public class AtlasIcon implements IIcon {
             return texelData;
         } else {
             int[] texelAnisotropicData = texelData;
-            int[] tempTexelData = new int[width * height];
+            int[] tempTexelData = new int[(width + 16) * (height + 16)];
             System.arraycopy(texelAnisotropicData, 0, tempTexelData, 0, texelAnisotropicData.length);
             texelAnisotropicData = prepareAnisotropicData(tempTexelData, width, height, 8);
 
