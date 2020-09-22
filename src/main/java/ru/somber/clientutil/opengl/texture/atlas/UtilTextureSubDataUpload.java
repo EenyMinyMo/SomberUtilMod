@@ -6,13 +6,17 @@ import org.lwjgl.opengl.GL12;
 
 import java.nio.IntBuffer;
 
+/**
+ * Утилитный класс для применения метода glTexSubImage2D.
+ * По сути это вырезка из майкрафтовского TextureUtil.
+ */
 public class UtilTextureSubDataUpload {
 
     private final IntBuffer dataBuffer;
 
 
     public UtilTextureSubDataUpload() {
-        dataBuffer = GLAllocation.createDirectIntBuffer(4194304);
+        dataBuffer = GLAllocation.createDirectIntBuffer(4_194_304);
     }
 
 
