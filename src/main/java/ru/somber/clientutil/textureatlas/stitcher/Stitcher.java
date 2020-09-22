@@ -1,9 +1,10 @@
-package ru.somber.clientutil.opengl.texture.atlas;
+package ru.somber.clientutil.textureatlas.stitcher;
 
 import com.google.common.collect.Lists;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.util.MathHelper;
+import ru.somber.clientutil.textureatlas.icon.AtlasIcon;
 
 import java.util.*;
 

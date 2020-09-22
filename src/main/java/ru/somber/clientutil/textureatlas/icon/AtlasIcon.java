@@ -1,4 +1,4 @@
-package ru.somber.clientutil.opengl.texture.atlas;
+package ru.somber.clientutil.textureatlas.icon;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;

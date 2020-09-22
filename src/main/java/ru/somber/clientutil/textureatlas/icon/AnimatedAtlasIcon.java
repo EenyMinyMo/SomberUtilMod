@@ -1,4 +1,4 @@
-package ru.somber.clientutil.opengl.texture.atlas;
+package ru.somber.clientutil.textureatlas.icon;
 
 public class AnimatedAtlasIcon extends AtlasIcon {
     public AnimatedAtlasIcon(String iconName) {

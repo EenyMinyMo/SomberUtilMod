@@ -1,4 +1,4 @@
-package ru.somber.clientutil.opengl.texture.atlas;
+package ru.somber.clientutil.textureatlas;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -21,6 +21,9 @@ import org.apache.logging.log4j.Logger;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
+import ru.somber.clientutil.textureatlas.icon.AnimatedAtlasIcon;
+import ru.somber.clientutil.textureatlas.icon.AtlasIcon;
+import ru.somber.clientutil.textureatlas.stitcher.Stitcher;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
