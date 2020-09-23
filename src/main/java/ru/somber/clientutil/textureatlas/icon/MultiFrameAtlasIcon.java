@@ -39,23 +39,44 @@ public class MultiFrameAtlasIcon extends AtlasIcon {
     public void initIcon(int widthAtlas, int heightAtlas, int originXInAtlas, int originYInAtlas, boolean rotated) {
         super.initIcon(widthAtlas, heightAtlas, originXInAtlas, originYInAtlas, rotated);
 
-        int frameWidth = getIconWidth() / countFrameColumn;
-        int frameHeight = getIconHeight() / countFrameRow;
-        for (int i = 0; i < countFrames; i++) {
-            int currentFrameColumn = i % countFrameColumn;
-            int currentFrameRow = i / countFrameColumn;
+        if (isUseAnisotropicFiltering()) {
+            int frameWidth = (getIconWidth() - 16) / countFrameColumn;
+            int frameHeight = (getIconHeight() - 16) / countFrameRow;
+            for (int i = 0; i < countFrames; i++) {
+                int currentFrameColumn = i % countFrameColumn;
+                int currentFrameRow = i / countFrameColumn;
 
-            AtlasIcon iconFrame = new AtlasIcon(getIconName() + "_frame_" + i, isInvertedU(), isInvertedV());
-            iconFrame.setUseAnisotropicFiltering(isUseAnisotropicFiltering());
-            iconFrame.setIconWidth(frameWidth);
-            iconFrame.setIconHeight(frameHeight);
+                AtlasIcon iconFrame = new AtlasIcon(getIconName() + "_frame_" + i, isInvertedU(), isInvertedV());
+                iconFrame.setUseAnisotropicFiltering(false);
+                iconFrame.setIconWidth(frameWidth);
+                iconFrame.setIconHeight(frameHeight);
 
-            int originXFrame = currentFrameColumn * frameWidth + getOriginX();
-            int originYFrame = currentFrameRow * frameHeight + getOriginY();
-            iconFrame.initIcon(widthAtlas, heightAtlas, originXFrame, originYFrame, isRotated());
+                int originXFrame = currentFrameColumn * frameWidth + getOriginX() + 8;
+                int originYFrame = currentFrameRow * frameHeight + getOriginY() + 8;
+                iconFrame.initIcon(widthAtlas, heightAtlas, originXFrame, originYFrame, isRotated());
 
-            frameIcons[i] = iconFrame;
+                frameIcons[i] = iconFrame;
+            }
+        } else {
+            int frameWidth = getIconWidth() / countFrameColumn;
+            int frameHeight = getIconHeight() / countFrameRow;
+            for (int i = 0; i < countFrames; i++) {
+                int currentFrameColumn = i % countFrameColumn;
+                int currentFrameRow = i / countFrameColumn;
+
+                AtlasIcon iconFrame = new AtlasIcon(getIconName() + "_frame_" + i, isInvertedU(), isInvertedV());
+                iconFrame.setUseAnisotropicFiltering(false);
+                iconFrame.setIconWidth(frameWidth);
+                iconFrame.setIconHeight(frameHeight);
+
+                int originXFrame = currentFrameColumn * frameWidth + getOriginX();
+                int originYFrame = currentFrameRow * frameHeight + getOriginY();
+                iconFrame.initIcon(widthAtlas, heightAtlas, originXFrame, originYFrame, isRotated());
+
+                frameIcons[i] = iconFrame;
+            }
         }
+
     }
 
     /**
