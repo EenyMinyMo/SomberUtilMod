@@ -88,7 +88,6 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
 
     /**
      * Уровень анизатропной фильтрации для этого алтаса.
-     * Заметка: ставить в 2 и больше, чтобы убрать артефакты на границах отдельных текстур.
      */
     private int anisotropicFiltering;
 
@@ -99,7 +98,7 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
      *                  atlasName должен быть следующего формата: "MOD_ID:путь_до_папки_с_текстурами"
      */
     public AtlasTexture(String atlasName) {
-        this(atlasName, 2);
+        this(atlasName, 0);
     }
 
     /**
@@ -110,7 +109,7 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
      */
     public AtlasTexture(String atlasName, int anisotropicFiltering) {
         this.atlasName = atlasName;
-        this.anisotropicFiltering = anisotropicFiltering;
+        setAnisotropicFiltering(anisotropicFiltering);
 
         initMissingImage();
         Minecraft.getMinecraft().renderEngine.loadTickableTexture(new ResourceLocation(atlasName), this);
