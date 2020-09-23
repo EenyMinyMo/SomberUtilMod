@@ -3,6 +3,8 @@ package ru.somber.commonutil;
 import net.minecraft.entity.Entity;
 import org.lwjgl.util.vector.Vector3f;
 
+import java.util.Random;
+
 /**
  * Общие утилиты.
  */
@@ -20,6 +22,10 @@ public final class SomberCommonUtils {
             NUMBER_ERROR_14 =   0.00000000000001,
             NUMBER_ERROR_16 =   0.0000000000000001,
             NUMBER_ERROR_18 =   0.000000000000000001;
+
+
+    /** Простой обычный рандомайзер. */
+    public static final Random RANDOMIZER = new Random();
 
 
     /**
