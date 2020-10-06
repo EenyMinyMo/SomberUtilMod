@@ -7,8 +7,8 @@ import cpw.mods.fml.relauncher.SideOnly;
  * Утилиты для серверной стороны.
  */
 @SideOnly(Side.SERVER)
-public final class SomberServerUtils {
-    private SomberServerUtils() {}
+public final class SomberServerUtil {
+    private SomberServerUtil() {}
 
     
 }

@@ -9,8 +9,8 @@ import java.nio.FloatBuffer;
  * Утилиты для клиентской стороны.
  */
 @SideOnly(Side.CLIENT)
-public final class SomberClientUtils {
-    private SomberClientUtils() {}
+public final class SomberClientUtil {
+    private SomberClientUtil() {}
 
     /**
      * 00 01

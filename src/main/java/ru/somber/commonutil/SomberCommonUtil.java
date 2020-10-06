@@ -8,8 +8,8 @@ import java.util.Random;
 /**
  * Общие утилиты.
  */
-public final class SomberCommonUtils {
-    private SomberCommonUtils() {}
+public final class SomberCommonUtil {
+    private SomberCommonUtil() {}
 
     /** number error - погрешность числа. */
     public static final double NUMBER_ERROR_1 = 0.1,

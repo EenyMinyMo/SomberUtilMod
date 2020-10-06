@@ -12,8 +12,8 @@ import java.io.IOException;
 import java.util.Scanner;
 
 @SideOnly(Side.CLIENT)
-public final class OpenGLUtils {
-    private OpenGLUtils() {}
+public final class OpenGLUtil {
+    private OpenGLUtil() {}
 
     public static String loadShaderCode(ResourceLocation rs) throws IOException {
         try (Scanner reader = new Scanner(Minecraft.getMinecraft().getResourceManager().getResource(rs).getInputStream())) {

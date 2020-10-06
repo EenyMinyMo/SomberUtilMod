@@ -123,7 +123,7 @@ public class Shader {
         Shader shader = new Shader(shaderType);
 
         try {
-            shader.setSourceCode(OpenGLUtils.loadShaderCode(sourceCodeLocation));
+            shader.setSourceCode(OpenGLUtil.loadShaderCode(sourceCodeLocation));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
