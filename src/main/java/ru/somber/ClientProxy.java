@@ -7,19 +7,16 @@ import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraftforge.common.MinecraftForge;
-import ru.somber.clientutil.camera.ClientRenderEvent;
-import ru.somber.clientutil.camera.ClientUpdateEvent;
+import ru.somber.clientutil.event.ClientRenderEvent;
 
 @SideOnly(Side.CLIENT)
 public class ClientProxy extends CommonProxy {
 
-    private ClientUpdateEvent updateEvent;
     private ClientRenderEvent renderEvent;
 
     public ClientProxy() {
         super();
 
-        updateEvent = new ClientUpdateEvent();
         renderEvent = new ClientRenderEvent();
     }
 
@@ -33,7 +30,6 @@ public class ClientProxy extends CommonProxy {
     public void init(FMLInitializationEvent event) {
         super.init(event);
 
-        FMLCommonHandler.instance().bus().register(updateEvent);
         MinecraftForge.EVENT_BUS.register(renderEvent);
     }
 
