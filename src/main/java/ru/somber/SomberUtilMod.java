@@ -12,7 +12,8 @@ public class SomberUtilMod {
     public static final String MOD_NAME = "Util for Somber mod";
     public static final String VERSION = "0.0.1";
 
-    @SidedProxy(clientSide = "ru.somber.ClientProxy")
+    @SidedProxy(clientSide = "ru.somber.ClientProxy",
+            serverSide = "ru.somber.ServerProxy")
     public static CommonProxy proxy;
 
     @Mod.EventHandler
