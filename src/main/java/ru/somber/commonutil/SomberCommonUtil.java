@@ -1,8 +1,16 @@
 package ru.somber.commonutil;
 
+import net.minecraft.command.IEntitySelector;
 import net.minecraft.entity.Entity;
+import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.util.MathHelper;
+import net.minecraft.world.World;
+import net.minecraft.world.chunk.Chunk;
+import net.minecraft.world.chunk.IChunkProvider;
 import org.lwjgl.util.vector.Vector3f;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -127,5 +135,39 @@ public final class SomberCommonUtil {
         destination.set(x, y, z);
     }
 
+
+    /**
+     * Записывает в переданный лист сущности, которые попали в aabb,
+     * наследуются от entityTypeClass, для которых entitySelector дает true.
+     * Если entitySelector == null, то селектор не учитывается.
+     *
+     *
+     * @param world мир, в котором происходит поиск.
+     * @param entityTypeClass класс сущности, объекты (и объекты потомков) которого будут искаться.
+     * @param aabb область, в которой будет происходить поиск сущностей.
+     * @param entitySelector селектор, с помощью которого можно задавать дополнительные параметры для искомых сущностей.
+     * @param destinationList список, в который будут записаны искомы сущности.
+     */
+    public static void getEntitiesWithinAABB(World world,
+                                             Class<? extends Entity> entityTypeClass,
+                                             AxisAlignedBB aabb,
+                                             IEntitySelector entitySelector,
+                                             List<? extends Entity> destinationList)
+    {
+        int xMinChunk = MathHelper.floor_double((aabb.minX - World.MAX_ENTITY_RADIUS) / 16.0D);
+        int xMaxChunk = MathHelper.floor_double((aabb.maxX + World.MAX_ENTITY_RADIUS) / 16.0D);
+        int zMinChunk = MathHelper.floor_double((aabb.minZ - World.MAX_ENTITY_RADIUS) / 16.0D);
+        int zMaxChunk = MathHelper.floor_double((aabb.maxZ + World.MAX_ENTITY_RADIUS) / 16.0D);
+
+        IChunkProvider chunkProvider = world.getChunkProvider();
+        for (int xChunk = xMinChunk; xChunk <= xMaxChunk; xChunk++) {
+            for (int zChunk = zMinChunk; zChunk <= zMaxChunk; zChunk++) {
+                if (chunkProvider.chunkExists(xChunk, zChunk)) {
+                    Chunk chunk = chunkProvider.provideChunk(xChunk, zChunk);
+                    chunk.getEntitiesOfTypeWithinAAAB(entityTypeClass, aabb, destinationList, entitySelector);
+                }
+            }
+        }
+    }
 
 }
