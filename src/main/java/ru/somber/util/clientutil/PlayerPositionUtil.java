@@ -20,49 +20,63 @@ public class PlayerPositionUtil {
     private float xCamera, yCamera, zCamera;
     /** Смещение камеры (в 3ем лице). */
     private float xOffsetCamera, yOffsetCamera, zOffsetCamera;
+    /** Вектор направления камеры. */
+    private float xCameraLookAt, yCameraLookAt, zCameraLookAt;
 
 
     private PlayerPositionUtil() { }
 
 
-    public float getXPlayer() {
+    public float xPlayer() {
         return xPlayer;
     }
 
-    public float getYPlayer() {
+    public float yPlayer() {
         return yPlayer;
     }
 
-    public float getZPlayer() {
+    public float zPlayer() {
         return zPlayer;
     }
 
 
-    public float getXCamera() {
+    public float xCamera() {
         return xCamera;
     }
 
-    public float getYCamera() {
+    public float yCamera() {
         return yCamera;
     }
 
-    public float getZCamera() {
+    public float zCamera() {
         return zCamera;
     }
 
 
-    public float getXOffsetCamera() {
+    public float xOffsetCamera() {
         return xOffsetCamera;
     }
 
-    public float getYOffsetCamera() {
+    public float yOffsetCamera() {
         return yOffsetCamera;
     }
 
-    public float getZOffsetCamera() {
+    public float zOffsetCamera() {
         return zOffsetCamera;
     }
 
+
+    public float xCameraLookAt() {
+        return xCameraLookAt;
+    }
+
+    public float yCameraLookAt() {
+        return yCameraLookAt;
+    }
+
+    public float zCameraLookAt() {
+        return zCameraLookAt;
+    }
 
     /**
      * Обновляет позицию игрока, смещение камеры и позицию камеры.
@@ -73,6 +87,20 @@ public class PlayerPositionUtil {
         xPlayer = SomberCommonUtil.interpolateBetween((float) renderViewEntity.lastTickPosX, (float) renderViewEntity.posX, interpolationFactor);
         yPlayer = SomberCommonUtil.interpolateBetween((float) renderViewEntity.lastTickPosY, (float) renderViewEntity.posY, interpolationFactor);
         zPlayer = SomberCommonUtil.interpolateBetween((float) renderViewEntity.lastTickPosZ, (float) renderViewEntity.posZ, interpolationFactor);
+
+        //угол смещения вдоль оси У
+        float yaw = renderViewEntity.rotationYaw;
+        //угол смещения вдоль оси Х
+        float pitch = renderViewEntity.rotationPitch;
+
+        //поворот камеры на 180, если 2ой режим от третьего лица
+        if (Minecraft.getMinecraft().gameSettings.thirdPersonView == 2) {
+            pitch += 180.0F;
+        }
+
+        xCameraLookAt = (float) (-Math.sin(yaw / 180.0 * Math.PI) * Math.cos(pitch / 180.0 * Math.PI));
+        yCameraLookAt = (float) (-Math.sin(pitch / 180.0 * Math.PI));
+        zCameraLookAt = (float) (Math.cos(yaw / 180.0 *  Math.PI) * Math.cos(pitch / 180.0 * Math.PI));
 
         //вычисляем смещение камеры, если оно есть
         computeCameraOffset();
@@ -97,24 +125,9 @@ public class PlayerPositionUtil {
         Minecraft mc = Minecraft.getMinecraft();
         //здесь будем вычислять смещения для 3го лица, если включен режим 3го лица.
         if (mc.gameSettings.thirdPersonView > 0) {
-            EntityLivingBase renderViewEntity = mc.renderViewEntity;
 
             //смещение камеры в режиме третьего лица в майнкрафте (длина вектора смещения)
             float cameraOffset = 4;
-            //угол смещения вдоль оси У
-            float yaw = renderViewEntity.rotationYaw;
-            //угол смещения вдоль оси Х
-            float pitch = renderViewEntity.rotationPitch;
-
-            //поворот камеры на 180, если 2ой режим от третьего лица
-            if (mc.gameSettings.thirdPersonView == 2) {
-                pitch += 180.0F;
-            }
-
-            //вычисляем вектор lookAt камеры.
-            float xCameraLookAt = -MathHelper.sin(yaw / 180.0F * (float) Math.PI) * MathHelper.cos(pitch / 180.0F * (float) Math.PI);
-            float yCameraLookAt = -MathHelper.sin(pitch / 180.0F * (float) Math.PI);
-            float zCameraLookAt = MathHelper.cos(yaw / 180.0F * (float) Math.PI) * MathHelper.cos(pitch / 180.0F * (float) Math.PI);
 
             //вектор lookAt длиной cameraOffset
             float xOffsetCameraTemp = xCameraLookAt * cameraOffset;
