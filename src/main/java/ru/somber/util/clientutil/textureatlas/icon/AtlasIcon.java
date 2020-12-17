@@ -310,7 +310,7 @@ public class AtlasIcon implements IIcon {
         fixTransparentPixels(texelDataArray);
         this.texelData = prepareAnisotropicFiltering(texelDataArray, width, height, isUseAnisotropicFiltering());
 
-        this.texelData = prepareOffsetTextureData(texelDataArray, this.width, this.height, texelOffset);
+        this.texelData = prepareOffsetTextureData(this.texelData, this.width, this.height, texelOffset);
         this.width += texelOffset * 2;
         this.height += texelOffset * 2;
     }
