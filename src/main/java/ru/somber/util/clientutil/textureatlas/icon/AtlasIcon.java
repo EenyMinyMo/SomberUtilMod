@@ -1,10 +1,17 @@
 package ru.somber.util.clientutil.textureatlas.icon;
 
+import com.google.common.collect.Lists;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraft.client.renderer.texture.TextureUtil;
+import net.minecraft.crash.CrashReport;
+import net.minecraft.crash.CrashReportCategory;
 import net.minecraft.util.IIcon;
+import net.minecraft.util.ReportedException;
 
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.concurrent.Callable;
 
 /**
  * Класс для представления иконок (по большей части это копия класса спрайта текстурного атласа из майкнрафта, но выпилен бесполезный функционал).
@@ -24,7 +31,7 @@ public class AtlasIcon implements IIcon {
     private final String iconName;
 
     /** Массив данных текселей соответствующей текстуры. */
-    private int[] texelData;
+    private int[][] texelData;
 
     /** Флаг нужно ли учитывать использование анизатропной фильтрации при подготовке текселей текстуры. */
     private boolean useAnisotropicFiltering;
@@ -51,7 +58,10 @@ public class AtlasIcon implements IIcon {
     /** Флаг нужно ли инвертировать текстурные координты V. */
     private boolean isInvertedV;
 
-    private int texelOffset = 2;
+    /**
+     * Кол-во пикселей расширения текстуры иконки для получения прозрачных границ вокруг текстур.
+     */
+    private int texelOffset;
 
 
     /**
@@ -63,6 +73,8 @@ public class AtlasIcon implements IIcon {
         this.iconName = iconName;
         this.isInvertedU = invertU;
         this.isInvertedV = invertV;
+
+        this.texelOffset = 8;
     }
 
 
@@ -217,14 +229,14 @@ public class AtlasIcon implements IIcon {
     /**
      * Возвращает массив с текстурными данными иконки.
      */
-    public int[] getTexelData() {
+    public int[][] getTexelData() {
         return texelData;
     }
 
     /**
      * Устанавливает массив с текстурными данными иконки.
      */
-    public void setTexelData(int[] texelData) {
+    public void setTexelData(int[][] texelData) {
         this.texelData = texelData;
     }
 
@@ -287,17 +299,12 @@ public class AtlasIcon implements IIcon {
      * в качестве данных иконки с учетом флага использования анизатропной фильтрации.
      * После вызова этого метода можно использовать texelData иконки.
      */
-    public void loadIconData(BufferedImage bufferedimage, boolean useAnisotropicFiltering) {
+    public void loadIconData(BufferedImage bufferedimage, boolean useAnisotropicFiltering, int countEstimatedMipmapLevels) {
         this.useAnisotropicFiltering = useAnisotropicFiltering;
         int width = bufferedimage.getWidth();
         int height = bufferedimage.getHeight();
         this.width = width;
         this.height = height;
-
-        if (this.useAnisotropicFiltering) {
-            this.width += 16;
-            this.height += 16;
-        }
 
         int[] texelDataArray = new int[bufferedimage.getWidth() * bufferedimage.getHeight()];
         bufferedimage.getRGB(0, 0, bufferedimage.getWidth(), bufferedimage.getHeight(), texelDataArray, 0, bufferedimage.getWidth());
@@ -307,12 +314,49 @@ public class AtlasIcon implements IIcon {
             throw new RuntimeException("broken aspect ratio and not an animation");
         }
 
-        fixTransparentPixels(texelDataArray);
-        this.texelData = prepareAnisotropicFiltering(texelDataArray, width, height, isUseAnisotropicFiltering());
+        this.texelData = new int[countEstimatedMipmapLevels + 1][];
+        this.texelData[0] = texelDataArray;
 
-        this.texelData = prepareOffsetTextureData(this.texelData, this.width, this.height, texelOffset);
+        fixTransparentPixels(texelDataArray);
+        prepareAnisotropicFilteringAndOffset(texelData, width, height, isUseAnisotropicFiltering(), texelOffset);
+
+        if (this.useAnisotropicFiltering) {
+            this.width += 16;
+            this.height += 16;
+        }
         this.width += texelOffset * 2;
         this.height += texelOffset * 2;
+    }
+
+    public void generateMipmaps(int mipmapLevel) {
+        if (this.texelData != null) {
+            try {
+                this.texelData = TextureUtil.generateMipmapData(mipmapLevel, this.width, this.texelData);
+            } catch (Throwable throwable) {
+                CrashReport crashreport = CrashReport.makeCrashReport(throwable, "Generating mipmaps for frame");
+                CrashReportCategory crashreportcategory = crashreport.makeCategory("Frame being iterated");
+                crashreportcategory.addCrashSectionCallable("Frame sizes", new Callable() {
+                    private static final String __OBFID = "CL_00001063";
+                    public String call() {
+                        StringBuilder stringbuilder = new StringBuilder();
+                        int k = texelData.length;
+
+                        for (int l = 0; l < k; ++l) {
+                            int[] aint2 = texelData[l];
+
+                            if (stringbuilder.length() > 0) {
+                                stringbuilder.append(", ");
+                            }
+
+                            stringbuilder.append(aint2 == null ? "null" : Integer.valueOf(aint2.length));
+                        }
+
+                        return stringbuilder.toString();
+                    }
+                });
+                throw new ReportedException(crashreport);
+            }
+        }
     }
 
 
@@ -379,24 +423,51 @@ public class AtlasIcon implements IIcon {
         }
     }
 
-    private static int[] prepareAnisotropicFiltering(int[] texelData, int width, int height, boolean useAnisotropicFiltering) {
-        if (! useAnisotropicFiltering) {
-            return texelData;
-        } else {
-            int[] tempTexelData = new int[(width + 16) * (height + 16)];
-            System.arraycopy(texelData, 0, tempTexelData, 0, texelData.length);
-            texelData = prepareAnisotropicData(tempTexelData, width, height, 8);
+    private static void prepareAnisotropicFilteringAndOffset(int[][] texelData, int width, int height, boolean isUseAnisotropicFiltering, int texelOffset) {
+        if (isUseAnisotropicFiltering) {
+            for (int level = 0; level < texelData.length; level++) {
+                if (texelData[level] == null) {
+                    continue;
+                }
 
-            return texelData;
+                int[] tempTexelData = new int[(width + 16 >> level) * (height + 16 >> level)];
+                System.arraycopy(texelData[level], 0, tempTexelData, 0, texelData[level].length);
+
+                prepareAnisotropicData(tempTexelData, width >> level, height >> level, 8 >> level);
+                texelData[level] = tempTexelData;
+            }
+        }
+
+        if (texelOffset > 0) {
+             for (int level = 0; level < texelData.length; level++) {
+                 if (texelData[level] == null) {
+                    continue;
+                }
+
+                int texelOffsetOfMipmap = texelOffset >> level;
+
+                int widthOfMipmap = width;
+                int heightOfMipmap = height;
+                if (isUseAnisotropicFiltering) {
+                    widthOfMipmap = widthOfMipmap + 16 >> level;
+                    heightOfMipmap = heightOfMipmap + 16 >> level;
+                }
+
+                int[] tempTexelData = new int[(widthOfMipmap + 2 * texelOffsetOfMipmap) * (heightOfMipmap + 2 * texelOffsetOfMipmap)];
+//                System.arraycopy(texelData[level], 0, tempTexelData, 0, texelData[level].length);
+
+                prepareOffsetTextureData(texelData[level], tempTexelData, widthOfMipmap, heightOfMipmap, texelOffsetOfMipmap);
+                texelData[level] = tempTexelData;
+            }
         }
     }
 
     /* копия метода из майкрафтовского TextureUtil. */
-    private static int[] prepareAnisotropicData(int[] texelData, int width, int height, int anisotropicTexelOffset) {
+    private static void prepareAnisotropicData(int[] texelData, int width, int height, int anisotropicTexelOffset) {
         int newWidth = width + 2 * anisotropicTexelOffset;
 
         //заполняем центреальную часть и пиксели слева и справа от центральной части.
-        for (int rowNumber = height - 1; rowNumber >= 0; --rowNumber) {
+        for (int rowNumber = height - 1; rowNumber >= 0; rowNumber--) {
             int oldRowTexelOffset = rowNumber * width;
             int newRowTexelOffset = anisotropicTexelOffset + (rowNumber + anisotropicTexelOffset) * newWidth;
 
@@ -426,22 +497,17 @@ public class AtlasIcon implements IIcon {
             int j1 = Math.min(height, anisotropicTexelOffset - columnAnisotropicOffset);
             System.arraycopy(texelData, anisotropicTexelOffset * newWidth, texelData, (height + anisotropicTexelOffset + columnAnisotropicOffset) * newWidth, newWidth * j1);
         }
-
-        return texelData;
     }
 
-    private static int[] prepareOffsetTextureData(int[] texelData, int width, int height, int texelOffset) {
+    private static void prepareOffsetTextureData(int[] srcData, int[] dstData, int width, int height, int texelOffset) {
         int newWidth = width + 2 * texelOffset;
-        int newHeight = height + 2 * texelOffset;
-        int[] newTexelData = new int[newWidth * newHeight];
+//        int newHeight = height + 2 * texelOffset;
 
-        int startTexelIndex = newWidth * 2 + texelOffset;
-        for (int rowNumber = 0; rowNumber < height; rowNumber++) {
-            System.arraycopy(texelData, rowNumber * width, newTexelData, startTexelIndex, width);
-            startTexelIndex += newWidth;
+        int startTexelIndex = newWidth * (texelOffset + height) + texelOffset;
+        for (int rowNumber = height - 1; rowNumber >= 0; rowNumber--) {
+            System.arraycopy(srcData, rowNumber * width, dstData, startTexelIndex, width);
+            startTexelIndex -= newWidth;
         }
-
-        return newTexelData;
     }
 
 }

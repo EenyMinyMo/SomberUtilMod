@@ -30,6 +30,9 @@ public class Stitcher {
     private final int maxTileDimension;
     /** Нужно ли форсировать размеры отдельных текстур как степеней двойки. */
     private final boolean forcePowerOf2;
+    /** Кол-во мипмап уровней, на которое расчитан сшиватель. */
+    private final int mipmapLevel;
+
 
     /** Текущая ширина сшивателя атласа. */
     private int currentWidth;
@@ -45,11 +48,12 @@ public class Stitcher {
      * @param forcePowerOf2 нужно ли специально делать размеры отдельных текстур в атласа равными степеням двойки.
      * @param maxTileDimension максимально возможные размеры отдельной текстуры в атласе (указать 0, если ограничения ну нужно).
      */
-    public Stitcher(int maxWidth, int maxHeight, boolean forcePowerOf2, int maxTileDimension) {
+    public Stitcher(int maxWidth, int maxHeight, boolean forcePowerOf2, int maxTileDimension, int mipmapLevel) {
         this.maxWidth = maxWidth;
         this.maxHeight = maxHeight;
         this.forcePowerOf2 = forcePowerOf2;
         this.maxTileDimension = maxTileDimension;
+        this.mipmapLevel = mipmapLevel;
     }
 
     /**
@@ -70,7 +74,7 @@ public class Stitcher {
      * Добавляет иконку для сшивания в текстурный атлас.
      */
     public void addSprite(AtlasIcon particleIcon) {
-        Holder holder = new Holder(particleIcon);
+        Holder holder = new Holder(particleIcon, mipmapLevel);
 
         if (maxTileDimension > 0) {
             holder.setNewDimension(maxTileDimension);
@@ -263,6 +267,11 @@ public class Stitcher {
     }
 
 
+    private static int getMipmapDimension(int dimensionSize, int mipmapLevel) {
+        return (dimensionSize >> mipmapLevel) + ((dimensionSize & (1 << mipmapLevel) - 1) == 0 ? 0 : 1) << mipmapLevel;
+    }
+
+
     /**
      * Класс держателя (holder) иконки и дополнительных данных о ней.
      */
@@ -275,6 +284,8 @@ public class Stitcher {
         private final int width;
         /** Высота самой иконки. */
         private final int height;
+        /** Кол-во мипмап уровней холдера. */
+        private final int mipmapLevel;
 
         /** Хранится ли иконка в сшивателе (в последствии и в атласе текстур) в перевернутом виде. */
         private boolean rotated;
@@ -285,11 +296,13 @@ public class Stitcher {
         /**
          * Создает holder иконки для переданной иконки.
          */
-        public Holder(AtlasIcon icon) {
+        public Holder(AtlasIcon icon, int mipmapLevel) {
             this.icon = icon;
             this.width = icon.getIconWidth();
             this.height = icon.getIconHeight();
-            this.rotated = height > width;
+            this.mipmapLevel = mipmapLevel;
+
+            this.rotated = getMipmapDimension(this.height, mipmapLevel) > getMipmapDimension(this.width, mipmapLevel);
         }
 
         /**
@@ -305,7 +318,7 @@ public class Stitcher {
          * т.к. возвращаемая ширина учитвает перевернута ли иконка в текстурном атласе, изменено ли ее соотношение сторон.
          */
         public int getWidth() {
-            return rotated ? (int) (height * scaleFactor) : (int) (width * scaleFactor);
+            return rotated ? getMipmapDimension((int) (height * scaleFactor), mipmapLevel) : getMipmapDimension((int) (width * scaleFactor), mipmapLevel);
         }
 
         /**
@@ -314,7 +327,7 @@ public class Stitcher {
          * т.к. возвращаемая высота учитвает перевернута ли иконка в текстурном атласе, изменено ли ее соотношение сторон.
          */
         public int getHeight() {
-            return rotated ? (int) (width * scaleFactor) : (int) (height * scaleFactor);
+            return rotated ? getMipmapDimension((int) (width * scaleFactor), mipmapLevel) : getMipmapDimension((int) (height * scaleFactor), mipmapLevel);
         }
 
         /**
