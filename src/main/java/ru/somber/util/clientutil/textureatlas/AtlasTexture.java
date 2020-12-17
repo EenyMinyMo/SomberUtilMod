@@ -29,6 +29,7 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.IntBuffer;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,16 +76,16 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
      * Здесь хранятся иконки, которые будут загружаться.
      * Хранение в формате <Название иконки, соответствующий AtlasIcon>.
      */
-    private final Map<String, AtlasIcon> mapRegisteredIcons = Maps.newHashMap();
+    private final Map<String, AtlasIcon> mapRegisteredIcons;
     /**
      * Здесь хранятся иконки, вошедшие в текущий текстурный атлас. Т.е. мапа заполнена иконками, имеющимися в уже готовом атласе.
      * Хранение в формате <Название иконки, соответствующий AtlasIcon>.
      */
-    private final Map<String, AtlasIcon> mapUploadedIcons = Maps.newHashMap();
+    private final Map<String, AtlasIcon> mapUploadedIcons;
     /**
-     * Список иконок, у которых есть внутренние фреймы.
+     * Отображение иконок, у которых есть внутренние фреймы.
      */
-    private final List<MultiFrameAtlasIcon> listMultiFramesIcons = Lists.newArrayList();
+    private final Map<String, MultiFrameAtlasIcon> mapMultiFrameIcons;
 
     /**
      * Уровень анизатропной фильтрации для этого алтаса.
@@ -110,6 +111,10 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
     public AtlasTexture(String atlasName, int anisotropicFiltering) {
         this.atlasName = atlasName;
         setAnisotropicFiltering(anisotropicFiltering);
+
+        this.mapRegisteredIcons = new HashMap<>();
+        this.mapUploadedIcons = new HashMap<>();
+        this.mapMultiFrameIcons = new HashMap<>();
 
         initMissingImage();
         Minecraft.getMinecraft().renderEngine.loadTickableTexture(new ResourceLocation(atlasName), this);
@@ -157,13 +162,13 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
      * Если иконка не найдена, выбрасывается RuntimeException.
      */
     public MultiFrameAtlasIcon getMultiFramesAtlasIcon(String iconName) {
-        for (MultiFrameAtlasIcon icon : listMultiFramesIcons) {
-            if (icon.getIconName().equals(iconName)) {
-                return icon;
-            }
+        MultiFrameAtlasIcon icon = mapMultiFrameIcons.get(iconName);
+
+        if (icon == null) {
+            throw new RuntimeException("MultiFrameAtlasIcon with name:" + iconName + " not found.");
         }
 
-        throw new RuntimeException("MultiFrameAtlasIcon with name:" + iconName + " not found.");
+        return icon;
     }
 
     /**
@@ -182,7 +187,7 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
 
         //Очищаем все загруженные иконки, коллекции будут заполнены далее новыми иконками.
         this.mapUploadedIcons.clear();
-        this.listMultiFramesIcons.clear();
+        this.mapMultiFrameIcons.clear();
 
         //инициализация ститчера.
         int maximumTextureSize = Minecraft.getGLMaximumTextureSize();
@@ -248,7 +253,7 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
         //и добавить в список мультифреймовых иконок.
         for (AtlasIcon icon : mapRegisteredIcons.values()) {
             if (icon.isMultiFramesIcon()) {
-                listMultiFramesIcons.add((MultiFrameAtlasIcon) icon);
+                mapMultiFrameIcons.put(icon.getIconName(), (MultiFrameAtlasIcon) icon);
             }
         }
     }
@@ -262,9 +267,8 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
 
         if (iconName == null) {
             throw new IllegalArgumentException("Name cannot be null!");
-        } else if (iconName.indexOf(92) == -1) {  // Disable backslashes (\) in texture asset paths.
+        } else if (iconName.indexOf('\\') == -1) {  // Disable backslashes (\) in texture asset paths.
             this.mapRegisteredIcons.put(iconName, icon);
-
             return icon;
         } else {
             throw new IllegalArgumentException("Name cannot contain slashes!");
@@ -298,7 +302,9 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
      * Метод ничего делает, т.к. текстура атласа не загружается, а формируется из других текстур.
      */
     @Override
-    public void loadTexture(IResourceManager resourceManager) throws IOException {}
+    public void loadTexture(IResourceManager resourceManager) throws IOException {
+        stitchTextureAtlas(resourceManager);
+    }
 
     @Override
     public void tick() {}
@@ -365,7 +371,7 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
     private ResourceLocation completeResourceLocation(String iconName) {
         int divider = iconName.indexOf(':');
         String domain = iconName.substring(0, divider);
-        String path = iconName.substring(divider + 1, iconName.length());
+        String path = iconName.substring(divider + 1);
 
         return new ResourceLocation(domain, String.format("%s/%s%s", this.atlasName, path, ".png"));
     }

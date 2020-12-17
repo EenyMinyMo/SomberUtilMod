@@ -51,6 +51,8 @@ public class AtlasIcon implements IIcon {
     /** Флаг нужно ли инвертировать текстурные координты V. */
     private boolean isInvertedV;
 
+    private int texelOffset = 2;
+
 
     /**
      * @param iconName имя иконки.
@@ -98,6 +100,14 @@ public class AtlasIcon implements IIcon {
             this.minV += heightAnisotropicOffset;
             this.maxV -= heightAnisotropicOffset;
         }
+
+        float widthTexelDataOffset = texelOffset / (float) widthAtlas;
+        float heightTexelDataOffset = texelOffset / (float) heightAtlas;
+
+        this.minU += widthTexelDataOffset;
+        this.maxU -= widthTexelDataOffset;
+        this.minV += heightTexelDataOffset;
+        this.maxV -= heightTexelDataOffset;
 
         if (isInvertedU) {
             float temp = minU;
@@ -299,6 +309,10 @@ public class AtlasIcon implements IIcon {
 
         fixTransparentPixels(texelDataArray);
         this.texelData = prepareAnisotropicFiltering(texelDataArray, width, height, isUseAnisotropicFiltering());
+
+        this.texelData = prepareOffsetTextureData(texelDataArray, this.width, this.height, texelOffset);
+        this.width += texelOffset * 2;
+        this.height += texelOffset * 2;
     }
 
 
@@ -369,49 +383,65 @@ public class AtlasIcon implements IIcon {
         if (! useAnisotropicFiltering) {
             return texelData;
         } else {
-            int[] texelAnisotropicData = texelData;
             int[] tempTexelData = new int[(width + 16) * (height + 16)];
-            System.arraycopy(texelAnisotropicData, 0, tempTexelData, 0, texelAnisotropicData.length);
-            texelAnisotropicData = prepareAnisotropicData(tempTexelData, width, height, 8);
+            System.arraycopy(texelData, 0, tempTexelData, 0, texelData.length);
+            texelData = prepareAnisotropicData(tempTexelData, width, height, 8);
 
-            return texelAnisotropicData;
+            return texelData;
         }
     }
 
     /* копия метода из майкрафтовского TextureUtil. */
     private static int[] prepareAnisotropicData(int[] texelData, int width, int height, int anisotropicTexelOffset) {
-        int l = width + 2 * anisotropicTexelOffset;
-        int i1;
-        int j1;
+        int newWidth = width + 2 * anisotropicTexelOffset;
 
-        for (i1 = height - 1; i1 >= 0; --i1) {
-            j1 = i1 * width;
-            int k1 = anisotropicTexelOffset + (i1 + anisotropicTexelOffset) * l;
-            int l1;
+        //заполняем центреальную часть и пиксели слева и справа от центральной части.
+        for (int rowNumber = height - 1; rowNumber >= 0; --rowNumber) {
+            int oldRowTexelOffset = rowNumber * width;
+            int newRowTexelOffset = anisotropicTexelOffset + (rowNumber + anisotropicTexelOffset) * newWidth;
 
-            for (l1 = 0; l1 < anisotropicTexelOffset; l1 += width) {
-                int i2 = Math.min(width, anisotropicTexelOffset - l1);
-                System.arraycopy(texelData, j1 + width - i2, texelData, k1 - l1 - i2, i2);
+            //заполняем тексели слева от центральной части.
+            for (int rowAnisotropicOffset = 0; rowAnisotropicOffset < anisotropicTexelOffset; rowAnisotropicOffset += width) {
+                int i2 = Math.min(width, anisotropicTexelOffset - rowAnisotropicOffset);
+                System.arraycopy(texelData, oldRowTexelOffset + width - i2, texelData, newRowTexelOffset - rowAnisotropicOffset - i2, i2);
             }
 
-            System.arraycopy(texelData, j1, texelData, k1, width);
+            //заполняем тексели центральной части.
+            System.arraycopy(texelData, oldRowTexelOffset, texelData, newRowTexelOffset, width);
 
-            for (l1 = 0; l1 < anisotropicTexelOffset; l1 += width) {
-                System.arraycopy(texelData, j1, texelData, k1 + width + l1, Math.min(width, anisotropicTexelOffset - l1));
+            //заполняем тексели справа от центральной части.
+            for (int rowAnisotropicOffset = 0; rowAnisotropicOffset < anisotropicTexelOffset; rowAnisotropicOffset += width) {
+                System.arraycopy(texelData, oldRowTexelOffset, texelData, newRowTexelOffset + width + rowAnisotropicOffset, Math.min(width, anisotropicTexelOffset - rowAnisotropicOffset));
             }
         }
 
-        for (i1 = 0; i1 < anisotropicTexelOffset; i1 += height) {
-            j1 = Math.min(height, anisotropicTexelOffset - i1);
-            System.arraycopy(texelData, (anisotropicTexelOffset + height - j1) * l, texelData, (anisotropicTexelOffset - i1 - j1) * l, l * j1);
+        //заполняем тексели сверху от центральной части.
+        for (int columnAnisotropicOffset = 0; columnAnisotropicOffset < anisotropicTexelOffset; columnAnisotropicOffset += height) {
+            int j1 = Math.min(height, anisotropicTexelOffset - columnAnisotropicOffset);
+            System.arraycopy(texelData, (anisotropicTexelOffset + height - j1) * newWidth, texelData, (anisotropicTexelOffset - columnAnisotropicOffset - j1) * newWidth, newWidth * j1);
         }
 
-        for (i1 = 0; i1 < anisotropicTexelOffset; i1 += height) {
-            j1 = Math.min(height, anisotropicTexelOffset - i1);
-            System.arraycopy(texelData, anisotropicTexelOffset * l, texelData, (height + anisotropicTexelOffset + i1) * l, l * j1);
+        //заполняем тексели снизу от центральной части.
+        for (int columnAnisotropicOffset = 0; columnAnisotropicOffset < anisotropicTexelOffset; columnAnisotropicOffset += height) {
+            int j1 = Math.min(height, anisotropicTexelOffset - columnAnisotropicOffset);
+            System.arraycopy(texelData, anisotropicTexelOffset * newWidth, texelData, (height + anisotropicTexelOffset + columnAnisotropicOffset) * newWidth, newWidth * j1);
         }
 
         return texelData;
+    }
+
+    private static int[] prepareOffsetTextureData(int[] texelData, int width, int height, int texelOffset) {
+        int newWidth = width + 2 * texelOffset;
+        int newHeight = height + 2 * texelOffset;
+        int[] newTexelData = new int[newWidth * newHeight];
+
+        int startTexelIndex = newWidth * 2 + texelOffset;
+        for (int rowNumber = 0; rowNumber < height; rowNumber++) {
+            System.arraycopy(texelData, rowNumber * width, newTexelData, startTexelIndex, width);
+            startTexelIndex += newWidth;
+        }
+
+        return newTexelData;
     }
 
 }

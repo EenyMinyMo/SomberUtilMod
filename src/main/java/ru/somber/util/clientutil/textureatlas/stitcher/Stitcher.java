@@ -269,7 +269,7 @@ public class Stitcher {
     @SideOnly(Side.CLIENT)
     public static class Holder implements Comparable<Holder> {
         /** Иконка, дополнительные данные о которой содержатся в объекте. */
-        private final AtlasIcon particleIcon;
+        private final AtlasIcon icon;
 
         /** Ширина самой иконки. */
         private final int width;
@@ -286,7 +286,7 @@ public class Stitcher {
          * Создает holder иконки для переданной иконки.
          */
         public Holder(AtlasIcon icon) {
-            this.particleIcon = icon;
+            this.icon = icon;
             this.width = icon.getIconWidth();
             this.height = icon.getIconHeight();
             this.rotated = height > width;
@@ -296,7 +296,7 @@ public class Stitcher {
          * Возвращает хранимую иконку.
          */
         public AtlasIcon getAtlasSprite() {
-            return particleIcon;
+            return icon;
         }
 
         /**
@@ -347,12 +347,12 @@ public class Stitcher {
                 if (getWidth() == otherHolder.getWidth()) { //в случае, когда ширины равны.
                     //если у какой то иконки нет названия, то она меньше.
                     //если у обеих иконок нет имени, то они равны.
-                    if (this.particleIcon.getIconName() == null) {
-                        return otherHolder.particleIcon.getIconName() == null ? 0 : -1;
+                    if (this.icon.getIconName() == null) {
+                        return otherHolder.icon.getIconName() == null ? 0 : -1;
                     }
 
                     //если у обеих иконок одинаковые размеры и есть имена, тогда сравниваем имена.
-                    return particleIcon.getIconName().compareTo(otherHolder.particleIcon.getIconName());
+                    return icon.getIconName().compareTo(otherHolder.icon.getIconName());
                 }
 
                 //если ширины не равны, то большая будет у которой ширина меньше.
@@ -366,7 +366,7 @@ public class Stitcher {
         @Override
         public String toString() {
             return "Holder{" +
-                    "particleIcon=" + particleIcon +
+                    "icon=" + icon +
                     ", width=" + width +
                     ", height=" + height +
                     ", rotated=" + rotated +
