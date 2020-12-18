@@ -1,6 +1,5 @@
 package ru.somber.util.clientutil.textureatlas;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -29,7 +28,6 @@ import ru.somber.util.clientutil.textureatlas.stitcher.Stitcher;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 import java.nio.IntBuffer;
 import java.util.HashMap;
@@ -72,29 +70,31 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
     private final String atlasName;
 
     /** Иконка для отсутствующих текстур. */
-    private final AtlasIcon missingImage;
+    private final AtlasIcon missingIcon;
 
     /**
-     * Здесь хранятся иконки, которые будут загружаться.
+     * Отображение иконок, которые будут загружаться.
      * Хранение в формате <Название иконки, соответствующий AtlasIcon>.
      */
     private final Map<String, AtlasIcon> mapRegisteredIcons;
     /**
-     * Здесь хранятся иконки, вошедшие в текущий текстурный атлас. Т.е. мапа заполнена иконками, имеющимися в уже готовом атласе.
+     * Отображение иконок, вошедших в текущий текстурный атлас. Т.е. мапа заполнена иконками, имеющимися в уже готовом атласе.
      * Хранение в формате <Название иконки, соответствующий AtlasIcon>.
      */
     private final Map<String, AtlasIcon> mapUploadedIcons;
     /**
-     * Отображение иконок, у которых есть внутренние фреймы.
+     * Отображение мультифреймовых иконок, которые вошли в текущий атлас (т.е. они загружены).
      */
     private final Map<String, MultiFrameAtlasIcon> mapMultiFrameIcons;
 
-    /**
-     * Уровень анизатропной фильтрации для этого алтаса.
-     */
+    /** Уровень анизатропной фильтрации для этого алтаса. */
     private int anisotropicFiltering;
-
-    private int mipmapLevel;
+    /** Максимальный мипмап уровень текстуры атласа. */
+    private int maxMipmapLevel;
+    /** Режим фильтрации атласа текстуры. */
+    private int filteringMinMode, filteringMagMode;
+    /** Режим wrap`а текстуры. */
+    private int wrapMode;
 
 
     /**
@@ -114,16 +114,21 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
      */
     public AtlasTexture(String atlasName, int anisotropicFiltering) {
         this.atlasName = atlasName;
-        this.missingImage = new AtlasIcon("missingno", false, false);
-        setAnisotropicFiltering(anisotropicFiltering);
+        this.missingIcon = new AtlasIcon("missingno", false, false);
 
         this.mapRegisteredIcons = new HashMap<>();
         this.mapUploadedIcons = new HashMap<>();
         this.mapMultiFrameIcons = new HashMap<>();
-        this.mipmapLevel = 4;
 
+        this.filteringMinMode = GL11.GL_LINEAR;
+        this.filteringMagMode = GL11.GL_LINEAR;
+        this.wrapMode = GL12.GL_CLAMP_TO_EDGE;
+
+        setAnisotropicFiltering(anisotropicFiltering);
+        setMaxMipmapLevel(4);
         initMissingImage();
-        Minecraft.getMinecraft().renderEngine.loadTickableTexture(new ResourceLocation(SomberUtilMod.MOD_ID, atlasName), this);
+
+        Minecraft.getMinecraft().renderEngine.loadTickableTexture(new ResourceLocation(SomberUtilMod.MOD_ID, getAtlasName()), this);
     }
 
 
@@ -144,20 +149,13 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
     }
 
     /**
-     * Возвращает уровень анизатропной фильтрации.
-     */
-    public int getAnisotropicFiltering() {
-        return anisotropicFiltering;
-    }
-
-    /**
      * Возвращает иконку по имени, если она входит в текущий текстурный атлас.
      * Иначе возвращается текстура-заглушка.
      */
     public AtlasIcon getAtlasIcon(String iconName) {
         AtlasIcon particleAtlasIcon = this.mapUploadedIcons.get(iconName);
         if (particleAtlasIcon == null) {
-            particleAtlasIcon = this.missingImage;
+            particleAtlasIcon = this.missingIcon;
         }
 
         return particleAtlasIcon;
@@ -179,10 +177,43 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
 
     /**
      * Устанавливает уровень анизатропной фильтрации для атласа.
-     * Атлас с этим уровнем анизатропной фильтрации будет создан только после вызова loadTextureAtlas().
+     * Атлас с этим уровнем анизатропной фильтрации будет создан только после вызова stitchTextureAtlas().
      */
     public void setAnisotropicFiltering(int newAnisotropicFiltering) {
         this.anisotropicFiltering = newAnisotropicFiltering;
+    }
+
+    /**
+     * Устанавливает максимальный уровень формирования мипмапов для атласа.
+     * Атлас с этим максимальным уровнем формирования мипмапов будет создан только после вызова stitchTextureAtlas().
+     */
+    public void setMaxMipmapLevel(int newMaxMipmapLevel) {
+        this.maxMipmapLevel = newMaxMipmapLevel;
+    }
+
+    /**
+     * Устанавливает режимы фильтрации для текстуры атласа.
+     * Параметры применяются немедленно.
+     */
+    public void setFilteringMode(int filteringMinMode, int filteringMagMode) {
+        this.filteringMinMode = filteringMinMode;
+        this.filteringMagMode = filteringMagMode;
+
+        GL11.glBindTexture(GL11.GL_TEXTURE_2D, getGlTextureId());
+        setTextureFilter(filteringMinMode, filteringMagMode);
+        GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
+    }
+
+    /**
+     * Устанавливает режимы wrap`а для текстуры атласа.
+     * Параметры применяются немедленно.
+     */
+    public void setWrapMode(int wrapMode) {
+        this.wrapMode = wrapMode;
+
+        GL11.glBindTexture(GL11.GL_TEXTURE_2D, getGlTextureId());
+        setTextureWrap(wrapMode);
+        GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
     }
 
     /**
@@ -197,26 +228,26 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
 
         //инициализация ститчера.
         int maximumTextureSize = Minecraft.getGLMaximumTextureSize();
-        Stitcher stitcher = new Stitcher(maximumTextureSize, maximumTextureSize, true, 0, mipmapLevel);
+        Stitcher stitcher = new Stitcher(maximumTextureSize, maximumTextureSize, true, 0, maxMipmapLevel);
 
         //Здесь происходит загрузка и дальнешая подготовка всех иконок из mapRegisteredIcons.
         int minSizeDimensionIcon = loadAllIcons(resourceManager, stitcher);
 
         //предполагаемое кол-во мипмап уровней.
         int estimatedNumbersOfMips = MathHelper.calculateLogBaseTwo(minSizeDimensionIcon);
-        if (estimatedNumbersOfMips < this.mipmapLevel) {
+        if (estimatedNumbersOfMips < this.maxMipmapLevel) {
             logger.debug("{}: dropping miplevel from {} to {}, because of minTexel: {}",
-                         new Object[] {this.getAtlasName(), Integer.valueOf(this.mipmapLevel), Integer.valueOf(estimatedNumbersOfMips), Integer.valueOf(minSizeDimensionIcon)});
-            this.mipmapLevel = estimatedNumbersOfMips;
+                         getAtlasName(), this.maxMipmapLevel, estimatedNumbersOfMips, minSizeDimensionIcon);
+            this.maxMipmapLevel = estimatedNumbersOfMips;
         }
 
         mapRegisteredIcons.forEach((iconName, icon) -> {
-            icon.generateMipmaps(this.mipmapLevel);
+            icon.generateMipmaps(this.maxMipmapLevel);
         });
-        missingImage.generateMipmaps(mipmapLevel);
+        missingIcon.generateMipmaps(maxMipmapLevel);
 
         //подготовка текстуры-заглушки.
-        stitcher.addSprite(this.missingImage);
+        stitcher.addSprite(this.missingIcon);
 
         //Сшиваем будущий атлас.
         stitcher.doStitch();
@@ -225,7 +256,7 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
         logger.info("Created a texture-atlas with name: {} and size: {}x{}", this.atlasName, stitcher.getCurrentWidth(), stitcher.getCurrentHeight());
         TextureUtil.allocateTextureImpl(
                 this.getGlTextureId(),
-                this.mipmapLevel,
+                this.maxMipmapLevel,
                 stitcher.getCurrentWidth(),
                 stitcher.getCurrentHeight(),
                 this.anisotropicFiltering);
@@ -243,14 +274,9 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
 
             try {
                 //загрузить данные текстур в текстуру-атлас, по сути это glTexSubImage2D
-                subDataUpload.uploadTextureMipmap(
-                        atlasIcons.getTexelData(),
-                        atlasIcons.getIconWidth(),
-                        atlasIcons.getIconHeight(),
-                        atlasIcons.getOriginX(),
-                        atlasIcons.getOriginY(),
-                        false,
-                        false);
+                subDataUpload.uploadTextureMipmap(atlasIcons.getTexelData(),
+                        atlasIcons.getIconWidth(), atlasIcons.getIconHeight(),
+                        atlasIcons.getOriginX(), atlasIcons.getOriginY());
             } catch (Throwable throwable) {
                 CrashReport crashreport1 = CrashReport.makeCrashReport(throwable, "Stitching texture atlas");
 
@@ -265,7 +291,7 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
 
         //Для всех, не вошедших в mapRegisteredIcons спрайтов, установить атрибуты от missingImage.
         for (AtlasIcon atlasSprite : tempMapRegisteredIcons.values()) {
-            atlasSprite.copyFrom(this.missingImage);
+            atlasSprite.copyFrom(this.missingIcon);
         }
 
         //Все иконки, у которых метод isMultiFramesIcon() возвращает true, закастить в MultiFrameAtlasIcon
@@ -275,6 +301,9 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
                 mapMultiFrameIcons.put(icon.getIconName(), (MultiFrameAtlasIcon) icon);
             }
         }
+
+        setTextureFilter(filteringMinMode, filteringMagMode);
+        setTextureWrap(wrapMode);
     }
 
 
@@ -338,21 +367,21 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
         if (this.anisotropicFiltering > 1) {
             textureData = new int[1024];
 
-            this.missingImage.setIconWidth(32);
-            this.missingImage.setIconHeight(32);
+            this.missingIcon.setIconWidth(32);
+            this.missingIcon.setIconHeight(32);
 
             System.arraycopy(TextureUtil.missingTextureData, 0, textureData, 0, TextureUtil.missingTextureData.length);
             TextureUtil.prepareAnisotropicData(textureData, 16, 16, 8);
         } else {
             textureData = TextureUtil.missingTextureData;
 
-            this.missingImage.setIconWidth(16);
-            this.missingImage.setIconHeight(16);
+            this.missingIcon.setIconWidth(16);
+            this.missingIcon.setIconHeight(16);
         }
 
-        int[][] mipmapTextureData = new int[mipmapLevel + 1][];
+        int[][] mipmapTextureData = new int[maxMipmapLevel + 1][];
         mipmapTextureData[0] = textureData;
-        this.missingImage.setTexelData(mipmapTextureData);
+        this.missingIcon.setTexelData(mipmapTextureData);
     }
 
     /**
@@ -372,7 +401,7 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
                 IResource textureImageResource = resourceManager.getResource(completeResourceLocation);
                 BufferedImage buffImageData = ImageIO.read(textureImageResource.getInputStream());
 
-                icon.loadIconData(buffImageData, this.anisotropicFiltering > 1, mipmapLevel);
+                icon.loadIconData(buffImageData, this.anisotropicFiltering > 1, maxMipmapLevel);
             } catch (RuntimeException runtimeexception) {
                 //logger.error("Unable to parse metadata from " + completeResourceLocation, runtimeexception);
                 cpw.mods.fml.client.FMLClientHandler.instance().trackBrokenTexture(completeResourceLocation, runtimeexception.getMessage());
@@ -405,6 +434,39 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
 
 
     /**
+     * Устанавливает режим wrap`а текстуры.
+     */
+    private static void setTextureWrap(int wrapMode) {
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, wrapMode);
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, wrapMode);
+
+//        if (useClampWrap) {
+//            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_CLAMP);
+//            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_CLAMP);
+//        } else {
+//            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
+//            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
+//        }
+    }
+
+    /**
+     * Устанавливает режим фильтрации текстуры.
+     */
+    private static void setTextureFilter(int minFilterMode, int magFilterMode) {
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, minFilterMode);
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, magFilterMode);
+
+//        if (isLinearFiltering) {
+//            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, isMipmapFiltering ? GL11.GL_LINEAR_MIPMAP_LINEAR : GL11.GL_LINEAR);
+//            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+//        } else {
+//            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, isMipmapFiltering ? GL11.GL_NEAREST_MIPMAP_LINEAR : GL11.GL_NEAREST);
+//            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+//        }
+    }
+
+
+    /**
      * Утилитный класс для применения метода glTexSubImage2D.
      * По сути это вырезка из майкрафтовского TextureUtil.
      */
@@ -418,25 +480,20 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
         }
 
 
-        public void uploadTextureMipmap(int[][] textureData, int width, int height, int originX, int originY, boolean isUseLinearFiltering, boolean isUseClampWrap) {
+        public void uploadTextureMipmap(int[][] textureData, int width, int height, int originX, int originY) {
             for (int mipmapLevel = 0; mipmapLevel < textureData.length; mipmapLevel++) {
                 int[] textureMipmapData = textureData[mipmapLevel];
-                uploadTextureSub(mipmapLevel,
-                                 textureMipmapData,
-                                 width >> mipmapLevel,
-                                 height >> mipmapLevel,
-                                 originX >> mipmapLevel,
-                                 originY >> mipmapLevel,
-                                 isUseLinearFiltering,
-                                 isUseClampWrap,
-                                 textureData.length > 1);
+                uploadTextureSub(mipmapLevel, textureMipmapData,
+                                 width >> mipmapLevel, height >> mipmapLevel,
+                                 originX >> mipmapLevel, originY >> mipmapLevel);
             }
         }
 
-        public void uploadTextureSub(int mipmapLevel, int[] texelData, int width, int height, int originX, int originY, boolean isUseLinearFiltering, boolean isUseClampWrap, boolean isUseMipmapFiltering) {
+
+        private void uploadTextureSub(int mipmapLevel, int[] texelData, int width, int height, int originX, int originY) {
             int j1 = 4_194_304 / width;
-            setTextureFilter(isUseLinearFiltering, isUseMipmapFiltering);
-            setTextureClamped(isUseClampWrap);
+            setTextureFilter(GL11.GL_NEAREST, GL11.GL_NEAREST);
+            setTextureWrap(GL11.GL_CLAMP);
             int i2;
 
             for (int k1 = 0; k1 < width * height; k1 += width * i2) {
@@ -448,27 +505,6 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
             }
 
             dataBuffer.clear();
-        }
-
-
-        private void setTextureClamped(boolean useClampWrap) {
-            if (useClampWrap) {
-                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_CLAMP);
-                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_CLAMP);
-            } else {
-                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
-                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
-            }
-        }
-
-        private void setTextureFilter(boolean isLinearFiltering, boolean isMipmapFiltering) {
-            if (isLinearFiltering) {
-                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, isMipmapFiltering ? GL11.GL_LINEAR_MIPMAP_LINEAR : GL11.GL_LINEAR);
-                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-            } else {
-                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, isMipmapFiltering ? GL11.GL_NEAREST_MIPMAP_LINEAR : GL11.GL_NEAREST);
-                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
-            }
         }
 
         private void copyToBufferPos(int[] data, int offset, int dataLength) {
