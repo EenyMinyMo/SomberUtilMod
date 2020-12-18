@@ -46,16 +46,10 @@ public final class SomberClientUtil {
         return fb.get(column * 4 + row);
     }
 
-    public static void printMatrix44(FloatBuffer fb) {
-        for (int y = 0; y < 4; y++) {
-            for (int x = 0; x < 4; x++) {
-                System.out.print(fb.get(x * 4 + y) + " ");
-            }
-            System.out.println();
-        }
-    }
 
-
+    /**
+     * Сохраняет на диск D в файл "D:\filename_mipmapLevel.png" текстуру с переданными id и размерами.
+     */
     public static void saveTextureInFile(int textureID, int width, int height, String name, int countMipmaps) {
         for (int level = 0; level <= countMipmaps; level++) {
             try {
