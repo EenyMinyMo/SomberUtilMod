@@ -275,8 +275,6 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
                 mapMultiFrameIcons.put(icon.getIconName(), (MultiFrameAtlasIcon) icon);
             }
         }
-
-        saveBufferAsTexture(getGlTextureId(), stitcher.getCurrentWidth(), stitcher.getCurrentHeight(), "testatlas", mipmapLevel);
     }
 
 
@@ -479,38 +477,6 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
             dataBuffer.position(0).limit(dataLength);
         }
 
-    }
-
-    public static void saveBufferAsTexture(int textureID, int width, int height, String name, int countMipmaps) {
-        for (int level = 0; level <= countMipmaps; level++) {
-            try {
-                int widthOfMipmap = width >> level;
-                int heightOfMipmap = height >> level;
-
-                int e = widthOfMipmap * heightOfMipmap;
-                IntBuffer pixelBuffer = BufferUtils.createIntBuffer(e);
-                int[] pixelValues = new int[e];
-                GL11.glPixelStorei(3333, 1);
-                GL11.glPixelStorei(3317, 1);
-                pixelBuffer.clear();
-                GL11.glBindTexture(3553, textureID);
-                GL11.glGetTexImage(3553, level, '\u80e1', '\u8367', pixelBuffer);
-                pixelBuffer.get(pixelValues);
-                TextureUtil.func_147953_a(pixelValues, widthOfMipmap, heightOfMipmap);
-                BufferedImage bufferedimage = null;
-                bufferedimage = new BufferedImage(widthOfMipmap, heightOfMipmap, 1);
-
-                for(int i1 = 0; i1 < heightOfMipmap; ++i1) {
-                    for(int j1 = 0; j1 < widthOfMipmap; ++j1) {
-                        bufferedimage.setRGB(j1, i1, pixelValues[i1 * widthOfMipmap + j1]);
-                    }
-                }
-
-                ImageIO.write(bufferedimage, "png", new File("D:\\" + name + "_" + level + ".png"));
-            } catch (Exception var10) {
-                var10.printStackTrace();
-            }
-        }
     }
 
 }
