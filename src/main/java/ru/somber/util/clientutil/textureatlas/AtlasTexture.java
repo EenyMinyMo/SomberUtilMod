@@ -346,9 +346,6 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
         }
     }
 
-    /**
-     * Метод ничего делает, т.к. текстура атласа не загружается, а формируется из других текстур.
-     */
     @Override
     public void loadTexture(IResourceManager resourceManager) throws IOException {
         stitchTextureAtlas(resourceManager);
