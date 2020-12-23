@@ -103,7 +103,7 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
      *                  atlasName должен быть следующего формата: "MOD_ID:путь_до_папки_с_текстурами"
      */
     public AtlasTexture(String atlasName) {
-        this(atlasName, 0);
+        this(atlasName, 1, 4);
     }
 
     /**
@@ -111,21 +111,34 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
      *                  Все текстуры атласа должны храниться в этой папке.
      *                  atlasName должен быть следующего формата: "MOD_ID:путь_до_папки_с_текстурами"
      * @param anisotropicFiltering уровень анизатропной фильтрации.
+     * @param maxMipmapLevel макимальный уровень формирования мип мапов.
      */
-    public AtlasTexture(String atlasName, int anisotropicFiltering) {
+    public AtlasTexture(String atlasName, int anisotropicFiltering, int maxMipmapLevel) {
         this.atlasName = atlasName;
-        this.missingIcon = new AtlasIcon("missingno", false, false);
 
         this.mapRegisteredIcons = new HashMap<>();
         this.mapUploadedIcons = new HashMap<>();
         this.mapMultiFrameIcons = new HashMap<>();
 
-        this.filteringMinMode = GL11.GL_LINEAR;
-        this.filteringMagMode = GL11.GL_LINEAR;
-        this.wrapMode = GL12.GL_CLAMP_TO_EDGE;
+        if (anisotropicFiltering < 1) {
+            anisotropicFiltering = 1;
+        } else if (anisotropicFiltering > 16) {
+            anisotropicFiltering = 16;
+        }
+        if (maxMipmapLevel < 0) {
+            maxMipmapLevel = 0;
+        } else if (maxMipmapLevel > 4) {
+            maxMipmapLevel = 4;
+        }
 
-        setAnisotropicFiltering(anisotropicFiltering);
-        setMaxMipmapLevel(4);
+        this.anisotropicFiltering = anisotropicFiltering;
+        this.maxMipmapLevel = maxMipmapLevel;
+
+        this.filteringMinMode = GL11.GL_NEAREST;
+        this.filteringMagMode = GL11.GL_NEAREST;
+        this.wrapMode = GL11.GL_REPEAT;
+
+        this.missingIcon = new AtlasIcon("missingno", false, false);
         initMissingImage();
 
         Minecraft.getMinecraft().renderEngine.loadTickableTexture(new ResourceLocation(SomberUtilMod.MOD_ID, getAtlasName()), this);
@@ -513,4 +526,3 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
     }
 
 }
-
