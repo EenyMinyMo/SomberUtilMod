@@ -8,5 +8,5 @@
 #files
 /gradlew.bat
 /build.gradle
-/SomberUtilMod(NeMod).iml
+/*.iml
 /gradlew
