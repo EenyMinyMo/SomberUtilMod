@@ -266,7 +266,7 @@ public class AtlasTexture extends AbstractTexture implements ITickableTextureObj
         stitcher.doStitch();
 
         //Выделяем место под текстуру-атлас в OGL. Данные в эту текстуру загружаем ниже.
-        logger.info("Created a texture-atlas with name: {} and size: {}x{}", this.atlasName, stitcher.getCurrentWidth(), stitcher.getCurrentHeight());
+        logger.info("SomberAtlas: created a AtlasTexture with name: \"{}\" and size: {}x{}", this.atlasName, stitcher.getCurrentWidth(), stitcher.getCurrentHeight());
         TextureUtil.allocateTextureImpl(
                 this.getGlTextureId(),
                 this.maxMipmapLevel,
