@@ -11,25 +11,21 @@ import java.util.Objects;
 
 @SideOnly(Side.CLIENT)
 public class Shader {
-    private int shaderType;
-    private int shaderID;
+    private final int shaderType;
+    private final int shaderID;
     private String sourceCode;
 
 
     public Shader(int shaderType) {
-        this.shaderType = shaderType;
-        this.shaderID = GL20.glCreateShader(shaderType);
+        this(shaderType, GL20.glCreateShader(shaderType), null);
     }
 
     public Shader(int shaderType, int shaderID) {
-        this.shaderType = shaderType;
-        this.shaderID = shaderID;
+        this(shaderType, shaderID, null);
     }
 
     public Shader(int shaderType, String sourceCode) {
-        this.shaderType = shaderType;
-        this.shaderID = GL20.glCreateShader(shaderType);
-        this.sourceCode = sourceCode;
+        this(shaderType, GL20.glCreateShader(shaderType), sourceCode);
     }
 
     public Shader(int shaderType, int shaderID, String sourceCode) {
@@ -39,9 +35,18 @@ public class Shader {
     }
 
 
-    public void setSourceCode(String sourceCode) {
-        this.sourceCode = sourceCode;
+    public int getShaderID() {
+        return shaderID;
     }
+
+    public int getShaderType() {
+        return shaderType;
+    }
+
+    public String getSourceCode() {
+        return sourceCode;
+    }
+
 
     public boolean compileShader() {
         GL20.glShaderSource(shaderID, sourceCode);
@@ -50,46 +55,19 @@ public class Shader {
         return getCompileStatus() == GL11.GL_TRUE;
     }
 
-    public int getCompileStatus() {
-        int compileStatus = GL20.glGetShaderi(shaderID, GL20.GL_COMPILE_STATUS);
-        return compileStatus;
+    public void deleteShader() {
+        if (isCompile()) {
+            GL20.glDeleteShader(shaderID);
+        }
     }
 
     public boolean isCompile() {
         return getCompileStatus() == GL11.GL_TRUE;
     }
 
-    public String getInfoLog() {
-        int messageLength = GL20.glGetShaderi(shaderID, GL20.GL_INFO_LOG_LENGTH);
-        String message = GL20.glGetShaderInfoLog(shaderID, messageLength);
-        return message;
-    }
-
-    public int getShaderType() {
-        return shaderType;
-    }
-
-    public int getShaderID() {
-        return shaderID;
-    }
-
-    public String getSourceCode() {
-        return sourceCode;
-    }
-
-    public void deleteShader() {
-        GL20.glDeleteShader(shaderID);
-    }
-
-    public void printInfoLogMessage() {
-        if (! isCompile()) {
-            System.out.println(getInfoLog());
-        }
-    }
-
     public void checkError() {
         if (! isCompile()) {
-            printInfoLogMessage();
+            System.out.println(getInfoLog());
             throw new RuntimeException("Compile shader error " + toString());
         }
     }
@@ -116,6 +94,22 @@ public class Shader {
                 ", shaderID=" + shaderID +
                 ", sourceCode='" + sourceCode + '\'' +
                 '}';
+    }
+
+
+    protected void setSourceCode(String sourceCode) {
+        this.sourceCode = sourceCode;
+    }
+
+    protected int getCompileStatus() {
+        int compileStatus = GL20.glGetShaderi(shaderID, GL20.GL_COMPILE_STATUS);
+        return compileStatus;
+    }
+
+    protected String getInfoLog() {
+        int messageLength = GL20.glGetShaderi(shaderID, GL20.GL_INFO_LOG_LENGTH);
+        String message = GL20.glGetShaderInfoLog(shaderID, messageLength);
+        return message;
     }
 
 
