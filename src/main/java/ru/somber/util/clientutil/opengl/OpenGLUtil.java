@@ -5,14 +5,36 @@ import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.util.ResourceLocation;
+import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL15;
 import ru.somber.util.clientutil.opengl.texture.Texture;
+import ru.somber.util.clientutil.opengl.vbo.VBO;
 
 import java.io.IOException;
+import java.nio.FloatBuffer;
 import java.util.Scanner;
 
 @SideOnly(Side.CLIENT)
 public final class OpenGLUtil {
+
+    public static final FloatBuffer normalizeScreenSpaceCoordsBuffer = BufferUtils.createFloatBuffer(8);
+    public static final VBO normalizeScreenSpaceCoordsVBO = VBO.createVBO();
+
+    static {
+        normalizeScreenSpaceCoordsBuffer.put(new float[] {
+                1, -1,
+                1, 1,
+                -1, -1,
+                -1, 1
+        });
+        normalizeScreenSpaceCoordsBuffer.flip();
+
+        normalizeScreenSpaceCoordsVBO.bindBuffer();
+        normalizeScreenSpaceCoordsVBO.bufferData(normalizeScreenSpaceCoordsBuffer, GL15.GL_STATIC_DRAW);
+        normalizeScreenSpaceCoordsVBO.bindNone();
+    }
+
     private OpenGLUtil() {}
 
     public static String loadShaderCode(ResourceLocation rs) throws IOException {

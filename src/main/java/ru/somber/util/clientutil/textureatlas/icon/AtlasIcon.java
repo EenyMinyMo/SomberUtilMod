@@ -1,6 +1,5 @@
 package ru.somber.util.clientutil.textureatlas.icon;
 
-import com.google.common.collect.Lists;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.client.renderer.texture.TextureUtil;
@@ -10,7 +9,6 @@ import net.minecraft.util.IIcon;
 import net.minecraft.util.ReportedException;
 
 import java.awt.image.BufferedImage;
-import java.util.ArrayList;
 import java.util.concurrent.Callable;
 
 /**

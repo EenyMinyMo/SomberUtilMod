@@ -2,7 +2,6 @@ package ru.somber.util.clientutil;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.util.MathHelper;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
 import ru.somber.util.commonutil.SomberCommonUtil;

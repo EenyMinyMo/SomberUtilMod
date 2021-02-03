@@ -49,15 +49,12 @@ public class ShaderProgram {
     }
 
 
-    public void setUniforms(String ... uniformNames) {
+    public void setUniformNames(String ... uniformNames) {
         int uniformLocation;
 
         uniformMap.clear();
         for (String name : uniformNames) {
             uniformLocation = GL20.glGetUniformLocation(shaderProgramID, name);
-            if (uniformLocation == -1) {
-                throw new RuntimeException("Uniform " + name + " not found");
-            }
 
             uniformMap.put(name, uniformLocation);
         }
